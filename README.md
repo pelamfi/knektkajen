@@ -9,3 +9,10 @@ Quoth [Yarn docs](https://yarnpkg.com/lang/en/docs/install/#mac-stable):
   If you use nvm or similar, you should ensure that your PATH lists nvm’s shims before the version of Node.js installed by Homebrew.
 
 
+
+
+https://github.com/rrdelaney/reason-scripts
+
+yarn create react-app octaves2-reason-scripts --scripts-version reason-scripts
+
+https://stackoverflow.com/questions/43108745/how-does-npm-handle-lock-files
