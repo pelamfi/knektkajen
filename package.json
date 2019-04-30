@@ -1,5 +1,5 @@
 {
-  "name": "octaves2-bsb-theme-react",
+  "name": "knektkajen",
   "version": "0.1.0",
   "scripts": {
     "build": "bsb -make-world",
@@ -13,8 +13,8 @@
   "keywords": [
     "BuckleScript"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "Peter Lamberg",
+  "license": "UNLICENSED",
   "dependencies": {
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
