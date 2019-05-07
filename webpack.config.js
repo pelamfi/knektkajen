@@ -16,10 +16,6 @@ module.exports = {
       filename: 'index.html',
       template: 'src/index.html'
     }),
-    new HtmlWebpackPlugin({
-      filename: 'zurb-foundation-sample-index.html',
-      template: 'src/zurb-foundation-sample-index.html'
-    })
   ],
   module: { // https://github.com/webpack-contrib/sass-loader
     rules: [{
