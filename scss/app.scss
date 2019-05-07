@@ -16,12 +16,51 @@
 //@import 'motion-ui';
 
 #app {
+    @extend .grid-container;
+} 
+
+.mainRow {
     @extend .grid-x;
     @extend .grid-margin-x;
 }
 
-.testCell {
-    @extend .small-4;
+.bottomRow {
+    @extend .grid-x;
+    @extend .grid-margin-x;
+}
+
+.left {
+    @extend .small-12;
+    @extend .medium-3;
+    @extend .large-2;
     @extend .cell;
     @extend .callout;
 }
+
+.svgView {
+    @extend .small-12;
+    @extend .medium-6;
+    @extend .large-8;
+    @extend .cell;
+    @extend .callout;
+}
+
+.svgView svg {
+    width: 100%;
+    height: 400px; // TODO: Responsive height somehow..
+}
+
+.right {
+    @extend .small-12;
+    @extend .medium-3;
+    @extend .large-2;
+    @extend .cell;
+    @extend .callout;
+}
+
+.testCell {
+    @extend .small-3;
+    @extend .cell;
+    @extend .callout;
+}
+
