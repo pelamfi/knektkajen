@@ -5,7 +5,7 @@ const outputDir = path.join(__dirname, 'build/');
 const isProd = process.env.NODE_ENV === 'production';
 
 module.exports = {
-  entry: ['./src/javascript.js', './src/Index.bs.js'],
+  entry: ['./src/index.js', './src/Index.bs.js'],
   mode: isProd ? 'production' : 'development',
   output: {
     path: outputDir,
@@ -31,7 +31,7 @@ module.exports = {
       }, {
           loader: "sass-loader",
           options: {
-              includePaths: ["./scss", "./node_modules/foundation-sites/scss/"]
+            includePaths: ["./scss", "./node_modules"]
           }
       }]      
     }]
