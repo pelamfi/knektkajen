@@ -11,7 +11,17 @@
 // @include foundation-everything(false);
 
 // Uncomment this to _also_ include the old grid with the flex grid:
-// @include foundation-grid;
+@include foundation-grid;
 
 //@import 'motion-ui';
 
+#app {
+    @extend .grid-x;
+    @extend .grid-margin-x;
+}
+
+.testCell {
+    @extend .small-4;
+    @extend .cell;
+    @extend .callout;
+}

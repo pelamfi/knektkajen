@@ -4,6 +4,11 @@ type state = {
   show: bool,
 };
 
+let resultComponent = (_greeting) => <div className="testCell">
+    {ReasonReact.string(_greeting)}
+  </div>
+
+
 /* Action declaration */
 type action =
   | Click
@@ -30,15 +35,16 @@ let make = (~greeting, _children) => {
 
   render: self => {
     let message =
-      "You've clicked this " ++ string_of_int(self.state.count) ++ " times(s)";
-    <div>
-      <button onClick={_event => self.send(Click)}>
+      "You've clicked this div " ++ string_of_int(self.state.count) ++ " times(s)";
+    
+      <Fragment>
+      <button className="testCell" onClick={_event => self.send(Click)}>
         {ReasonReact.string(message)}
       </button>
-      <button onClick={_event => self.send(Toggle)}>
+      <button className="testCell" onClick={_event => self.send(Toggle)}>
         {ReasonReact.string("Toggle greeting")}
       </button>
-      {self.state.show ? ReasonReact.string(greeting) : ReasonReact.null}
-    </div>;
+      {self.state.show ? resultComponent(greeting) : ReasonReact.null}
+      </Fragment>
   },
 };
