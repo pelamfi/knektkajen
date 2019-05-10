@@ -18,11 +18,16 @@ let make = (~greeting, _children) => {
 
   initialState: () => {ticks: 0, intervalId: None},
 
-  didMount: self => {self.send(Mount(Js.Global.setInterval({() => {Js.log("Tick");self.send(Tick)}}, 2000)))},
+  didMount: self => {
+    let intervalId = Js.Global.setInterval(() => {
+          Js.log("Tick");
+          self.send(Tick)
+        }, 500)
+
+    self.send(Mount(intervalId))
+    },
   willUnmount: self => {
       self.state.intervalId |> Belt.Option.map(_, Js.Global.clearInterval) |> ignore
-      
-      Js.log("clearInterval")
     },
 
   reducer: (action, state) =>
