@@ -1,6 +1,6 @@
 type state = {
   ticks: int,
-  intervalId: option(Js_global.intervalId),
+  intervalId: option(Js.Global.intervalId),
 };
 
 let resultComponent = (_greeting) => <div className="testCell">
@@ -9,8 +9,7 @@ let resultComponent = (_greeting) => <div className="testCell">
 
 type action =
   | Tick
-  | Mount(Js_global.intervalId)
-  | UnMount;
+  | Mount(Js.Global.intervalId);
 
 let component = ReasonReact.reducerComponent("Ticker");
 
@@ -19,24 +18,17 @@ let make = (~greeting, _children) => {
 
   initialState: () => {ticks: 0, intervalId: None},
 
-  didMount: self => {self.send(Mount(Js_global.setInterval({() => {Js.log("Tick");self.send(Tick)}}, 2000)))},
+  didMount: self => {self.send(Mount(Js.Global.setInterval({() => {Js.log("Tick");self.send(Tick)}}, 2000)))},
   willUnmount: self => {
-      switch (self.state.intervalId) {
-        |Some(id) => 
-        Js.log("clearInterval")
-        Js_global.clearInterval(id)
-        |None => ()
-      }
+      self.state.intervalId |> Belt.Option.map(_, Js.Global.clearInterval) |> ignore
+      
+      Js.log("clearInterval")
     },
 
   reducer: (action, state) =>
     switch (action) {
     | Tick => ReasonReact.Update({...state, ticks: state.ticks + 1})
     | Mount(id) => ReasonReact.Update({...state, intervalId: Some(id)})
-    | UnMount => {
-
-      ReasonReact.Update({...state, intervalId: None})
-      }
     },
 
   render: self => {
