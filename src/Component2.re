@@ -1,4 +1,4 @@
-/* State declaration */
+
 type state = {
   count: int,
   showTicker: bool,

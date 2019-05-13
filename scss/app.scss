@@ -19,6 +19,17 @@
     @extend .grid-container;
 } 
 
+.mainMenuRow {
+    @extend .grid-x;
+    @extend .grid-margin-x;
+}
+
+.mainMenuItem {
+    @extend .small-3;
+    @extend .cell;
+    @extend .callout;
+}
+
 .mainRow {
     @extend .grid-x;
     @extend .grid-margin-x;
@@ -64,3 +75,21 @@
     @extend .callout;
 }
 
+$grid-columns: 23;
+$xy-block-grid-max: 1;
+$grid-column-gutter: 0.5;
+$grid-margin-gutters: 0.5;
+
+.relativeNotesRow {
+    @extend .grid-x;
+    @extend .relative-notes-grid;
+}
+
+.noteCell {
+    @extend .small-1;
+    @extend .cell;
+    @extend .callout;
+}
+
+@include xy-margin-grid-classes(left right, false, '.relative-notes-grid')
+  
