@@ -141,6 +141,8 @@ let scaleIntervals = (s: scaleClass): list(interval) => {
     }
 }
 
+let middleC: note = {offset: 0}
+
 let apply = (n: note, i: interval): note => {offset: n.offset + i.steps}
 
 let scale = (rootNote: note, s: scaleClass): list(note) => {
