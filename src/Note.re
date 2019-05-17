@@ -198,6 +198,28 @@ let name = (n: note, scale: scaleName): noteName => {
     asNoteName(chromaticNote, noteClass)
 }
 
+let asString = (n: noteName): string => {
+    switch n {
+        | C => "C"
+        | CSharpDFlat(Sharp) => {js|C♯|js}
+        | CSharpDFlat(Flat) => {js|D♭|js}
+        | D => "D"
+        | DSharpEFlat(Sharp) => {js|D♯|js}
+        | DSharpEFlat(Flat) => {js|E♭|js}
+        | E => "E"
+        | F => "F"
+        | FSharpGFlat(Sharp) => {js|F♯|js}
+        | FSharpGFlat(Flat) => {js|G♭|js}
+        | G => "G"
+        | GSharpAFlat(Sharp) => {js|G♯|js}
+        | GSharpAFlat(Flat) => {js|A♭|js}
+        | A => "A"
+        | ASharpBFlat(Sharp) => {js|A♯|js}
+        | ASharpBFlat(Flat) => {js|B♭|js}
+        | B => "B"
+    }
+}
+
 let frequency = (n: note): float => {
     // middle C is the 0, so shift by 9 half tones to A which is the nice round 440 hz
     Js.Math.pow_float(2.0, float(n.offset - 9) /. 12.0) *. 440.0

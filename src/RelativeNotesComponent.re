@@ -5,8 +5,8 @@ let make = (_children) => {
   ...component,
   render: _ => {
     let notes = Note.(scale(middleC, Chromatic));
-    let noteElems =Belt.List.map(notes, x => {
-      <div className="noteCell">{ReasonReact.string(string_of_int(x.offset))}</div>
+    let noteElems = Belt.List.map(notes, x => {
+      <RelativeNoteComponent key={string_of_int(x.offset)} note={x}/>
     });
     <Fragment>
       <div className="relativeNotesRow">
