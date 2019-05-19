@@ -115,18 +115,9 @@ let chromaticNoteNames: list(noteName) = [
     C, CSharpDFlat(Sharp), D, DSharpEFlat(Sharp), E, F, FSharpGFlat(Sharp), G,
      GSharpAFlat(Sharp), A, ASharpBFlat(Sharp), B];
 
-/*
-TODO: Range idea
-type range = Range(int, int)
-
-let map = (r: range, f: int => 'a): ['a] => {
-    switch(r) {
-        | Range(first, afterLast) =>
-            for (i in first to afterLast - 1) {
-                
-            }
-    }
-}*/
+let range = (first: note, count: int): list(note) => {
+    Range.make(first.offset, first.offset + count) |> Range.map(_, x => {offset: first.offset + x})
+}
 
 // TODO: Interval should probably be sum type of 12 items
 type interval = {steps: int};
