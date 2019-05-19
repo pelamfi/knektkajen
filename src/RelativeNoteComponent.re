@@ -1,10 +1,6 @@
 
 open Note
-
-type state = {
-  count: int,
-  showTicker: bool,
-};
+open RelativeNotesState
 
 let resultComponent = (contents) => <div className="testCell">
     contents
@@ -15,22 +11,14 @@ type action =
   | Click
   | Toggle;
 
-let component = ReasonReact.reducerComponent("Example");
+let component = ReasonReact.statelessComponent("RelativeNoteComponent");
 
-let make = (~note: note, _children) => {
+let make = (~note: note, ~state: state, ~ acceptEvent: acceptEvent, _children) => {
   ...component,
 
-  initialState: () => {count: 0, showTicker: false},
-
-  reducer: (action, state) =>
-    switch (action) {
-    | Click => ReasonReact.Update({...state, count: state.count + 1})
-    | Toggle => ReasonReact.Update({...state, showTicker: ! state.showTicker})
-    },
-
-  render: self => { 
-    
-    <div className="noteCell">
+  render: _ => { 
+    let className = state.currentNote == note ? "noteCell current" :  "noteCell notCurrent";
+    <div className={className} onClick={_ => acceptEvent(ClickNote(note))}>
     {ReasonReact.string(asString(name(note, cMajorName)))}
     </div>
   },
