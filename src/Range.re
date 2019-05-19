@@ -6,7 +6,7 @@ let map = (r: range, f: int => 'a): list('a) => {
     switch(r) {
         | Range(first, afterLast) =>
             let count = afterLast - first
-            Belt.List.fromArray(Belt.Array.makeBy(count, f))
+            Belt.List.fromArray(Belt.Array.makeBy(count, i => f(first + i)))
             // for (i in first to afterLast - 1) {}
     }
 }

@@ -2,18 +2,9 @@
 open Note
 open RelativeNotesState
 
-let resultComponent = (contents) => <div className="testCell">
-    contents
-  </div>
-
-/* Action declaration */
-type action =
-  | Click
-  | Toggle;
-
 let component = ReasonReact.statelessComponent("RelativeNoteComponent");
 
-let make = (~note: note, ~state: state, ~ acceptEvent: acceptEvent, _children) => {
+let make = (~note: note, ~state: state, ~acceptEvent: acceptEvent, _children) => {
   ...component,
 
   render: _ => { 

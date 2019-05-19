@@ -115,8 +115,8 @@ let chromaticNoteNames: list(noteName) = [
     C, CSharpDFlat(Sharp), D, DSharpEFlat(Sharp), E, F, FSharpGFlat(Sharp), G,
      GSharpAFlat(Sharp), A, ASharpBFlat(Sharp), B];
 
-let range = (first: note, count: int): list(note) => {
-    Range.make(first.offset, first.offset + count) |> Range.map(_, x => {offset: first.offset + x})
+let range = (base: note, start: int, rangeEnd: int): list(note) => {
+    Range.make(start, rangeEnd) |> Range.map(_, x => {offset: base.offset + x})
 }
 
 // TODO: Interval should probably be sum type of 12 items

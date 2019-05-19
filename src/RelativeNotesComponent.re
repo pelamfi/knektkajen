@@ -12,8 +12,8 @@ let make = (_children) => {
 
   render: self => {
     let acceptEvent: acceptEvent = self.send
-    let noteElems = notesBoxNotes(self.state) |> Belt.List.map(_, x => {
-      <RelativeNoteComponent state={self.state} acceptEvent={acceptEvent} key={string_of_int(x.offset)} note={x}/>
+    let noteElems = notesBoxNotes(self.state) |> Belt.List.map(_, note => {
+      <RelativeNoteComponent state={self.state} acceptEvent={acceptEvent} key={string_of_int(note.offset)} note={note}/>
     });
     <Fragment>
       <div className="relativeNotesRow">
