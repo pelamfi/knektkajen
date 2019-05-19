@@ -91,8 +91,8 @@ $grid-margin-gutters: 0.5;
     @extend .callout;
 }
 
-.relativeNotesRow .current {
-    background-color: red;  
+.noteCell.current {
+    @extend .callout.primary;
 }
 
 @include xy-margin-grid-classes(left right, false, '.relative-notes-grid')
