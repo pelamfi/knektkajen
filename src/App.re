@@ -1,52 +1,56 @@
-open Belt.List
-open ReactUtil
-type mainUiMode = Game | RelativeNotes;
+open Belt.List;
+open ReactUtil;
+type mainUiMode =
+  | Game
+  | RelativeNotes;
 
-type state = {
-  mainUiMode: mainUiMode,
-};
+type state = {mainUiMode};
 
 type action =
-  | ChangeMode(mainUiMode)
+  | ChangeMode(mainUiMode);
 
-
-type menuItem = {title: string, mode: mainUiMode}
+type menuItem = {
+  title: string,
+  mode: mainUiMode,
+};
 
 let menuItems: list(menuItem) = [
-  {title: "Play With Intervals (wip)", mode: RelativeNotes}, 
-  {title: "Notes Quiz (placeholder)", mode: Game}]
+  {title: "Play With Intervals (wip)", mode: RelativeNotes},
+  {title: "Notes Quiz (placeholder)", mode: Game},
+];
 
-let menuButton = (menuItem: menuItem, currentMode: mainUiMode, send: (action) => unit) => {
-  let className =currentMode == menuItem.mode ? "mainMenuItem current" :  "mainMenuItem";
-  <button className={className} onClick={_event => send(ChangeMode(menuItem.mode))}>
+let menuButton =
+    (menuItem: menuItem, currentMode: mainUiMode, send: action => unit) => {
+  let className =
+    currentMode == menuItem.mode ? "mainMenuItem current" : "mainMenuItem";
+  <button className onClick={_event => send(ChangeMode(menuItem.mode))}>
     {ReasonReact.string(menuItem.title)}
-  </button>
-}
+  </button>;
+};
 
 let component = ReasonReact.reducerComponent("App");
-let make = (_children) => {
+let make = _children => {
   ...component,
 
   initialState: () => {mainUiMode: RelativeNotes},
 
   reducer: (action, _) =>
     switch (action) {
-    | ChangeMode(mode)  => ReasonReact.Update({mainUiMode: mode})
+    | ChangeMode(mode) => ReasonReact.Update({mainUiMode: mode})
     },
 
   render: self => {
     <Fragment>
       <div className="mainMenuRow">
-        {asReact(menuItems |> map(_, menuButton(_, self.state.mainUiMode, self.send)))}
+        {asReact(
+           menuItems
+           |> map(_, menuButton(_, self.state.mainUiMode, self.send)),
+         )}
       </div>
-      {
-        switch (self.state.mainUiMode) {
-         | Game => <GameComponent/>
-         | RelativeNotes  => <RelativeNotesComponent/>
-        }
-      }
-    </Fragment>
+      {switch (self.state.mainUiMode) {
+       | Game => <GameComponent />
+       | RelativeNotes => <RelativeNotesComponent />
+       }}
+    </Fragment>;
   },
 };
-
-

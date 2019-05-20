@@ -3,9 +3,8 @@ type state = {
   intervalId: option(Js.Global.intervalId),
 };
 
-let resultComponent = (_greeting) => <div className="testCell">
-    {ReasonReact.string(_greeting)}
-  </div>
+let resultComponent = _greeting =>
+  <div className="testCell"> {ReasonReact.string(_greeting)} </div>;
 
 type action =
   | Tick
@@ -19,16 +18,22 @@ let make = (~greeting, _children) => {
   initialState: () => {ticks: 0, intervalId: None},
 
   didMount: self => {
-    let intervalId = Js.Global.setInterval(() => {
+    let intervalId =
+      Js.Global.setInterval(
+        () => {
           Js.log("Tick");
-          self.send(Tick)
-        }, 500)
+          self.send(Tick);
+        },
+        500,
+      );
 
-    self.send(Mount(intervalId))
-    },
+    self.send(Mount(intervalId));
+  },
   willUnmount: self => {
-      self.state.intervalId |> Belt.Option.map(_, Js.Global.clearInterval) |> ignore
-    },
+    self.state.intervalId
+    |> Belt.Option.map(_, Js.Global.clearInterval)
+    |> ignore;
+  },
 
   reducer: (action, state) =>
     switch (action) {
@@ -37,9 +42,8 @@ let make = (~greeting, _children) => {
     },
 
   render: self => {
-    let message = greeting ++ string_of_int(self.state.ticks) ++ " ticks have passed";
-    <Fragment>
-      {ReasonReact.string(message)}
-    </Fragment>
+    let message =
+      greeting ++ string_of_int(self.state.ticks) ++ " ticks have passed";
+    <Fragment> {ReasonReact.string(message)} </Fragment>;
   },
 };
