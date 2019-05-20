@@ -18,7 +18,8 @@ let make = (_children) => {
       <RelativeNoteComponent state={self.state} acceptEvent={acceptEvent} key={string_of_int(note.offset)} note={note}/>
     );
 
-    let paddingClass = "relativeNotesPadding-" ++ string_of_int(13 - self.state.currentNote.offset);
+    let paddingCount = min(max(1, 13 - self.state.currentNote.offset), 1 + 2 * 12)
+    let paddingClass = "relativeNotesPadding-" ++ string_of_int(paddingCount);
     
     <Fragment>
       <div className="relativeNotesRow">
