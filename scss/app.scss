@@ -91,7 +91,7 @@ $grid-margin-gutters: 0.5;
     margin-right: -150% !important;
 }
 
-@for $i from 1 through 13 {
+@for $i from 1 through (1 + 12 * 2) {
     .relativeNotesPadding-#{$i} {
         @extend .small-#{$i};
         @extend .cell;

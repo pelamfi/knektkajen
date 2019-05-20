@@ -18,7 +18,7 @@ let make = (_children) => {
       <RelativeNoteComponent state={self.state} acceptEvent={acceptEvent} key={string_of_int(note.offset)} note={note}/>
     );
 
-    let paddingClass = "relativeNotesPadding-" ++ string_of_int(12 - Note.moduloOffset(self.state.currentNote));
+    let paddingClass = "relativeNotesPadding-" ++ string_of_int(13 - self.state.currentNote.offset);
     
     <Fragment>
       <div className="relativeNotesRow">
