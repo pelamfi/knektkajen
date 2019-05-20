@@ -79,7 +79,7 @@
     @extend .callout;
 }
 
-$grid-columns: 12*4;
+$grid-columns: 13+12+25+12+13;
 $xy-block-grid-max: 1;
 $grid-column-gutter: 0.5;
 $grid-margin-gutters: 0.5;
@@ -87,8 +87,17 @@ $grid-margin-gutters: 0.5;
 .relativeNotesRow {
     @extend .grid-x;
     @extend .relative-notes-grid;
-    margin-left: -100% !important;
-    margin-right: -100% !important;
+    margin-left: -150% !important;
+    margin-right: -150% !important;
+}
+
+@for $i from 1 through 13 {
+    .relativeNotesPadding-#{$i} {
+        @extend .small-#{$i};
+        @extend .cell;
+        transition-property: width;
+        transition-duration: 0.33s;
+    }
 }
 
 .noteCell {
@@ -96,7 +105,7 @@ $grid-margin-gutters: 0.5;
     @extend .cell;
     @extend .callout;
     transition-property: background-color;
-    transition-duration: 0.33s;
+    transition-duration: 0.1s;
 }
 
 .noteCell.current {

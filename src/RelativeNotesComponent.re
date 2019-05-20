@@ -17,8 +17,14 @@ let make = (_children) => {
     let noteElems = notesBoxNotes(self.state) |> map(_, note =>
       <RelativeNoteComponent state={self.state} acceptEvent={acceptEvent} key={string_of_int(note.offset)} note={note}/>
     );
+
+    let paddingClass = "relativeNotesPadding-" ++ string_of_int(12 - Note.moduloOffset(self.state.currentNote));
+    
     <Fragment>
-      <div className="relativeNotesRow">{asReact(noteElems)}</div>
+      <div className="relativeNotesRow">
+        <div className={paddingClass}/>
+        {asReact(noteElems)}
+      </div>
     </Fragment>
   },
 };
