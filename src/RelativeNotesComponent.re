@@ -1,5 +1,7 @@
 open RelativeNotesState
 open RelativeNotesViewModel
+open ReactUtil
+open Belt.List
 
 let component = ReasonReact.reducerComponent("RelativeNotesComponent");
 
@@ -12,13 +14,11 @@ let make = (_children) => {
 
   render: self => {
     let acceptEvent: acceptEvent = self.send
-    let noteElems = notesBoxNotes(self.state) |> Belt.List.map(_, note => {
+    let noteElems = notesBoxNotes(self.state) |> map(_, note =>
       <RelativeNoteComponent state={self.state} acceptEvent={acceptEvent} key={string_of_int(note.offset)} note={note}/>
-    });
+    );
     <Fragment>
-      <div className="relativeNotesRow">
-      (ReasonReact.array(Belt.List.toArray(noteElems)))
-      </div>
+      <div className="relativeNotesRow">{asReact(noteElems)}</div>
     </Fragment>
   },
 };

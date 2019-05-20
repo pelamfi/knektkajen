@@ -30,6 +30,10 @@
     @extend .callout;
 }
 
+.mainMenuItem.current {
+    @extend .callout.primary;
+}
+
 .mainRow {
     @extend .grid-x;
     @extend .grid-margin-x;
@@ -75,7 +79,7 @@
     @extend .callout;
 }
 
-$grid-columns: 23;
+$grid-columns: 12*4;
 $xy-block-grid-max: 1;
 $grid-column-gutter: 0.5;
 $grid-margin-gutters: 0.5;
@@ -83,12 +87,16 @@ $grid-margin-gutters: 0.5;
 .relativeNotesRow {
     @extend .grid-x;
     @extend .relative-notes-grid;
+    margin-left: -100% !important;
+    margin-right: -100% !important;
 }
 
 .noteCell {
     @extend .small-1;
     @extend .cell;
     @extend .callout;
+    transition-property: background-color;
+    transition-duration: 0.33s;
 }
 
 .noteCell.current {

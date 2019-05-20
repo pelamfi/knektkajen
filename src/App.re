@@ -1,3 +1,5 @@
+open Belt.List
+open ReactUtil
 type mainUiMode = Game | RelativeNotes;
 
 type state = {
@@ -8,8 +10,20 @@ type action =
   | ChangeMode(mainUiMode)
 
 
-let component = ReasonReact.reducerComponent("App");
+type menuItem = {title: string, mode: mainUiMode}
 
+let menuItems: list(menuItem) = [
+  {title: "Play With Intervals (wip)", mode: RelativeNotes}, 
+  {title: "Notes Quiz (placeholder)", mode: Game}]
+
+let menuButton = (menuItem: menuItem, currentMode: mainUiMode, send: (action) => unit) => {
+  let className =currentMode == menuItem.mode ? "mainMenuItem current" :  "mainMenuItem";
+  <button className={className} onClick={_event => send(ChangeMode(menuItem.mode))}>
+    {ReasonReact.string(menuItem.title)}
+  </button>
+}
+
+let component = ReasonReact.reducerComponent("App");
 let make = (_children) => {
   ...component,
 
@@ -20,22 +34,19 @@ let make = (_children) => {
     | ChangeMode(mode)  => ReasonReact.Update({mainUiMode: mode})
     },
 
-  render: self =>
+  render: self => {
     <Fragment>
       <div className="mainMenuRow">
-        <button className="mainMenuItem" onClick={_event => self.send(ChangeMode(RelativeNotes))}>
-            {ReasonReact.string("Play With Interval")}
-        </button>
-        <button className="mainMenuItem" onClick={_event => self.send(ChangeMode(Game))}>
-            {ReasonReact.string("Notes Quiz (placeholder)")}
-        </button>
+        {asReact(menuItems |> map(_, menuButton(_, self.state.mainUiMode, self.send)))}
       </div>
-      {switch (self.state.mainUiMode) {
+      {
+        switch (self.state.mainUiMode) {
          | Game => <GameComponent/>
          | RelativeNotes  => <RelativeNotesComponent/>
+        }
       }
-      }
-    </Fragment>,
+    </Fragment>
+  },
 };
 
 
