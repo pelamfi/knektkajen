@@ -81,8 +81,8 @@
 
 $grid-columns: 13+12+25+12+13;
 $xy-block-grid-max: 1;
-$grid-column-gutter: 0.5;
-$grid-margin-gutters: 0.5;
+$grid-column-gutter: 1px;
+$grid-margin-gutters: 1px;
 
 .relativeNotesRow {
     @extend .grid-x;
