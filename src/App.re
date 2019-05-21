@@ -1,5 +1,6 @@
 open Belt.List;
 open ReactUtil;
+
 type mainUiMode =
   | Game
   | RelativeNotes;
@@ -23,7 +24,7 @@ let menuButton =
     (menuItem: menuItem, currentMode: mainUiMode, send: action => unit) => {
   let className =
     currentMode == menuItem.mode ? "mainMenuItem current" : "mainMenuItem";
-  <button className onClick={_event => send(ChangeMode(menuItem.mode))}>
+  <button className key={menuItem.title} onClick={_event => send(ChangeMode(menuItem.mode))}>
     {ReasonReact.string(menuItem.title)}
   </button>;
 };

@@ -3,14 +3,14 @@ open RelativeNotesState;
 
 let component = ReasonReact.statelessComponent("RelativeNoteComponent");
 
-let make = (~note: note, ~state: state, ~acceptEvent: acceptEvent, _children) => {
+let make = (~note: note, ~current: bool, ~acceptEvent: acceptEvent, _children) => {
   ...component,
 
   render: _ => {
     let className =
-      state.currentNote == note ? "noteCell current" : "noteCell";
+      current ? "noteCell current" : "noteCell";
     <div className onClick={_ => acceptEvent(ClickNote(note))}>
       {ReasonReact.string(asString(name(note, cMajorName)))}
-    </div>;
+    </div>
   },
-};
+}
