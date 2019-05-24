@@ -95,17 +95,19 @@ $grid-margin-gutters: 1px;
     .relativeNotesPadding-#{$i} {
         @extend .small-#{$i};
         @extend .cell;
-        transition-property: width;
-        transition-duration: 0.33s;
     }
 }
 
+.relativeNotesPadding-anim {
+    transition-property: width;
+    transition-duration: 0.333s;
+}
 .noteCell {
     @extend .small-1;
     @extend .cell;
     @extend .callout;
-    transition-property: background-color;
-    transition-duration: 0.1s;
+    //transition-property: background-color;
+    //transition-duration: 0.1s;
 }
 
 .noteCell.current {
