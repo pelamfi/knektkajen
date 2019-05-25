@@ -121,6 +121,20 @@ body {
   }
 }
 
+@media screen and (max-width: 500px) {
+  .relativeNotesRow {
+    margin-left: -400% !important;
+    margin-right: -400% !important;
+  }
+}
+
+@media screen and (max-width: 350px) {
+  .relativeNotesRow {
+    margin-left: -500% !important;
+    margin-right: -500% !important;
+  }
+}
+
 @for $i from 1 through (1 + 12 * 2) {
     .relativeNotesPadding-#{$i} {
         @extend .small-#{$i};
