@@ -154,12 +154,12 @@ let make = (~config: config, ~current: int, _children) => {
              ++ paddingAnimClass;
             let e = elems(self.state, config);
             Js.log("paddingclass " ++ paddingClass);
-            <Fragment>
-            <div className={rowClassName}>
-                <div className={paddingClass}/>
-                {asReact(e)}
+            <div className="infiniteSlider">
+                <div className={rowClassName}>
+                    <div className={paddingClass}/>
+                    {asReact(e)}
+                </div>
             </div>
-            </Fragment>
         },
     }
 }

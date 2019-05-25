@@ -84,11 +84,41 @@ $xy-block-grid-max: 1;
 $grid-column-gutter: 1px;
 $grid-margin-gutters: 1px;
 
+// https://stackoverflow.com/a/52685817/1148030
+// Also see the meta viewport in index.html
+body {
+    touch-action: none;
+}
+
+// Clipping wrapper to get the mobile browser feel that it
+// does not need to enable extra scrolling to show the 
+// overflowing infinite scroll "buffer" elements.
+.infiniteSlider {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 .relativeNotesRow {
     @extend .grid-x;
     @extend .relative-notes-grid;
     margin-left: -150% !important;
     margin-right: -150% !important;
+}
+
+@media screen and (max-width: 992px) {
+  .relativeNotesRow {
+    margin-left: -200% !important;
+    margin-right: -200% !important;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .relativeNotesRow {
+    margin-left: -300% !important;
+    margin-right: -300% !important;
+  }
 }
 
 @for $i from 1 through (1 + 12 * 2) {
