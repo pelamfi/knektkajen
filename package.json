@@ -21,6 +21,7 @@
     "node-sass": "^4.12.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
+    "react-swipeable": "^5.2.3",
     "react-transition-group": "^4.0.1",
     "reason-react": "^0.7.0",
     "sass-loader": "^7.1.0",
