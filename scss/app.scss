@@ -152,13 +152,13 @@ body {
     @extend .cell;
     @extend .callout;
     transition-property: background-color;
-    transition-duration: 1s;
+    transition-duration: 3s;
 }
 
 .noteCell.current {
     background-color: #dd2785;
     transition-property: background-color;
-    transition-duration: 1s;
+    transition-duration: 0.1s;
 }
 
 @include xy-margin-grid-classes(left right, false, '.relative-notes-grid')
