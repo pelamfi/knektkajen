@@ -10,11 +10,12 @@ type action =
   | Click
   | Toggle;
 
-let component = ReasonReact.reducerComponent("Example");
 
-let make = (~greeting, _children) => {
-  ...component,
+[@react.component]
+let make = (~greeting) => {
 
+  <div/>
+  /*
   initialState: () => {count: 0, showTicker: false},
 
   reducer: (action, state) =>
@@ -29,7 +30,7 @@ let make = (~greeting, _children) => {
       ++ string_of_int(self.state.count)
       ++ " times(s)\n";
 
-    <Fragment>
+    <fragment>
       <button className="testCell" onClick={_event => self.send(Click)}>
         {ReasonReact.string(message)}
       </button>
@@ -39,6 +40,7 @@ let make = (~greeting, _children) => {
       {self.state.showTicker
          ? resultComponent(<Ticker greeting="A ticker! " />)
          : resultComponent(ReasonReact.string("Hi! No ticker!"))}
-    </Fragment>;
+    </fragment>
   },
+  */
 };

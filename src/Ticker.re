@@ -10,13 +10,18 @@ type action =
   | Tick
   | Mount(Js.Global.intervalId);
 
-let component = ReasonReact.reducerComponent("Ticker");
 
-let make = (~greeting, _children) => {
-  ...component,
+[@react.component]
+let make = (~greeting) => {  
+  let (state, dispatch) =
+    React.useReducer(
+      (state: state, action: action) =>
+      switch (action) {
+      | Tick => {...state, ticks: state.ticks + 1}
+      | Mount(id) => {...state, intervalId: Some(id)}
+      }, {ticks: 0, intervalId: None});
 
-  initialState: () => {ticks: 0, intervalId: None},
-
+/*
   didMount: self => {
     let intervalId =
       Js.Global.setInterval(
@@ -33,17 +38,9 @@ let make = (~greeting, _children) => {
     self.state.intervalId
     |> Belt.Option.map(_, Js.Global.clearInterval)
     |> ignore;
-  },
-
-  reducer: (action, state) =>
-    switch (action) {
-    | Tick => ReasonReact.Update({...state, ticks: state.ticks + 1})
-    | Mount(id) => ReasonReact.Update({...state, intervalId: Some(id)})
-    },
-
-  render: self => {
-    let message =
-      greeting ++ string_of_int(self.state.ticks) ++ " ticks have passed";
-    <Fragment> {ReasonReact.string(message)} </Fragment>;
-  },
+  },*/
+  let message =
+    greeting ++ string_of_int(state.ticks) ++ " ticks have passed";
+  //<Fragment> {ReasonReact.string(message)} </Fragment>;
+  <div> {ReasonReact.string(message)} </div>;
 };

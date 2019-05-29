@@ -1,7 +1,7 @@
 open ReactUtil
 open Belt.List
 
-type componentFactory = (int, int) => React.element;
+type componentFactory = (int, int) => reactComponent;
 
 type animatingWithQueue = {fromIndex: int, toIndex: int, toIndexQueued: int};
 type animating = {fromIndex: int, toIndex: int};
@@ -47,8 +47,6 @@ type config = {
     maxJump: int
 };
 
-let component = ReasonReact.reducerComponentWithRetainedProps("InfiniteSlider");
-
 let paddingCount = (state: state, maxJump: int): int => {
     switch(state.slideState) {
         | Idle => 1 + maxJump
@@ -56,7 +54,7 @@ let paddingCount = (state: state, maxJump: int): int => {
     }
 }
 
-let elems = (state: state, config: config): list(React.element) => {
+let elems = (state: state, config: config): list(reactComponent) => {
     let offset = switch(state.slideState) {
         | Idle => state.current
         | Animating({fromIndex}) | AnimatingWithQueue({fromIndex}) => fromIndex
@@ -64,14 +62,17 @@ let elems = (state: state, config: config): list(React.element) => {
     config.itemsWindow |> Range.map(_, i => config.componentFactory(i + offset, state.current));
 };
 
-let make = (~config: config, ~current: int, _children) => {
+[@react.component]
+let make = (~config: config, ~current: int) => {
     let rowClassName = config.styleBaseName ++ "Row";   
+
+    <div>{ReasonReact.string("FIXME")}</div>
+    /*
     {
-        ...component,
 
         initialState: (): state => {current: 0, timeoutId: None, slideState: Idle},
         reducer: (event: event, state: state) => {
-            ReactSwipeable.foo("foo");
+            // ReactSwipeable.foo("foo");
             let newState = switch(event) {
                 | AnimationComplete => 
                 state.timeoutId
@@ -139,7 +140,7 @@ let make = (~config: config, ~current: int, _children) => {
             }
             let paddingClass = config.styleBaseName ++ "Padding-" ++ string_of_int(paddingCount(self.state, config.maxJump))
              ++ paddingAnimClass;
-            let e = elems(self.state, config);
+            let e: list(reactComponent) = elems(self.state, config);
             Js.log("paddingclass " ++ paddingClass);
             <div className="infiniteSlider">
                 <div className={rowClassName}>
@@ -149,5 +150,5 @@ let make = (~config: config, ~current: int, _children) => {
             </div>
         },
     }
-}
-;
+    */
+};

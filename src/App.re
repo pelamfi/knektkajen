@@ -29,29 +29,31 @@ let menuButton =
   </button>;
 };
 
-let component = ReasonReact.reducerComponent("App");
-let make = _children => {
-  ...component,
-
-  initialState: () => {mainUiMode: RelativeNotes},
-
+[@react.component]
+let make = () => {
+  //initialState: () => {mainUiMode: RelativeNotes},
+  
+  /*
   reducer: (action, _) =>
     switch (action) {
     | ChangeMode(mode) => ReasonReact.Update({mainUiMode: mode})
     },
-
-  render: self => {
-    <Fragment>
-      <div className="mainMenuRow">
+*/
+<div>
+  //<fragment>
+      /*<div className="mainMenuRow">
         {asReact(
            menuItems
            |> map(_, menuButton(_, self.state.mainUiMode, self.send)),
          )}
-      </div>
+      </div>*/
+      <GameComponent />
+      <RelativeNotesComponent />
+      /*
       {switch (self.state.mainUiMode) {
        | Game => <GameComponent />
        | RelativeNotes => <RelativeNotesComponent />
-       }}
-    </Fragment>;
-  },
+       }} */
+   // </fragment>;
+   </div>
 };
