@@ -62,29 +62,16 @@ let elems = (state: state, config: config): list(React.element) => {
         | Animating({fromIndex}) | AnimatingWithQueue({fromIndex}) => fromIndex
     }
     config.itemsWindow |> Range.map(_, i => config.componentFactory(i + offset, state.current));
-}
-
-/*
-type retainedProps = int
-
-type delayedSideEffectType = self(state, retainedProps, event) => unit
-
-let delayedSendSideEffect = (ms: int, effect: () => event): delayedSideEffectType() => {
-    self => unit {
-        self.send(effect())
-    }
-}
-*/
-
-//let string_of_react_update
+};
 
 let make = (~config: config, ~current: int, _children) => {
-    let rowClassName = config.styleBaseName ++ "Row";
+    let rowClassName = config.styleBaseName ++ "Row";   
     {
         ...component,
 
         initialState: (): state => {current: 0, timeoutId: None, slideState: Idle},
         reducer: (event: event, state: state) => {
+            ReactSwipeable.foo("foo");
             let newState = switch(event) {
                 | AnimationComplete => 
                 state.timeoutId
