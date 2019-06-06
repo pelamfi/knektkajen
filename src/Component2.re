@@ -5,41 +5,36 @@ type state = {
 
 let resultComponent = contents => <div className="testCell"> contents </div>;
 
-/* Action declaration */
 type action =
   | Click
   | Toggle;
 
-
 [@react.component]
 let make = (~greeting) => {
+  
+    let (state, dispatch) =
+      React.useReducer(
+      (state: state, action: action) =>
+      switch (action) {
+      | Click => {...state, count: state.count + 1}
+      | Toggle => {...state, showTicker: !state.showTicker}
+      },
+      {count: 0, showTicker: false});
 
-    /*
-  initialState: () => {count: 0, showTicker: false},
-
-  reducer: (action, state) =>
-    switch (action) {
-    | Click => ReasonReact.Update({...state, count: state.count + 1})
-    | Toggle => ReasonReact.Update({...state, showTicker: !state.showTicker})
-    },
-
-  render: self => {
     let message =
-      "You've clicked this div "
-      ++ string_of_int(self.state.count)
+      greeting ++ " You've clicked this div "
+      ++ string_of_int(state.count)
       ++ " times(s)\n";
 
     <>
-      <button className="testCell" onClick={_event => self.send(Click)}>
+      <button className="testCell" onClick={_event => dispatch(Click)}>
         {ReasonReact.string(message)}
       </button>
-      <button className="testCell" onClick={_event => self.send(Toggle)}>
+      <button className="testCell" onClick={_event => dispatch(Toggle)}>
         {ReasonReact.string("Toggle ticker")}
       </button>
-      {self.state.showTicker
+      {state.showTicker
          ? resultComponent(<Ticker greeting="A ticker! " />)
          : resultComponent(ReasonReact.string("Hi! No ticker!"))}
     </>
-  },
-  */
 };

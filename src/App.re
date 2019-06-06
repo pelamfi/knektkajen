@@ -31,27 +31,23 @@ let menuButton =
 
 [@react.component]
 let make = () => {
-  //initialState: () => {mainUiMode: RelativeNotes},
-  
-  /*
-  reducer: (action, _) =>
-    switch (action) {
-    | ChangeMode(mode) => ReasonReact.Update({mainUiMode: mode})
-    },
-*/
+  let (state, dispatch) =
+    React.useReducer(
+      (state: state, action: action) =>
+      switch (action) {
+      | ChangeMode(mode) => {mainUiMode: mode}
+      }, {mainUiMode: RelativeNotes});
+
   <>
-      /*<div className="mainMenuRow">
+      <div className="mainMenuRow">
         {asReact(
            menuItems
-           |> map(_, menuButton(_, self.state.mainUiMode, self.send)),
+           |> map(_, menuButton(_, state.mainUiMode, dispatch)),
          )}
-      </div>*/
-      <GameComponent />
-      <RelativeNotesComponent />
-      /*
-      {switch (self.state.mainUiMode) {
+      </div>
+      {switch (state.mainUiMode) {
        | Game => <GameComponent />
        | RelativeNotes => <RelativeNotesComponent />
-       }} */
+       }}
    </>;
 };
