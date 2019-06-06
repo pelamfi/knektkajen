@@ -1,7 +1,7 @@
 
 [@react.component]
 let make = () => {
-  <fragment>
+  <>
     <div className="mainRow">
       <div className="left" />
       <SvgView/>
@@ -11,5 +11,5 @@ let make = () => {
       <Component1 message="Click component and check console!" />
       <Component2 greeting="Hello!" />
     </div>
-  </fragment>
-};
+  </>
+}

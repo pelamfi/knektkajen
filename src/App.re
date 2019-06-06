@@ -39,8 +39,7 @@ let make = () => {
     | ChangeMode(mode) => ReasonReact.Update({mainUiMode: mode})
     },
 */
-<div>
-  //<fragment>
+  <>
       /*<div className="mainMenuRow">
         {asReact(
            menuItems
@@ -54,6 +53,5 @@ let make = () => {
        | Game => <GameComponent />
        | RelativeNotes => <RelativeNotesComponent />
        }} */
-   // </fragment>;
-   </div>
+   </>;
 };

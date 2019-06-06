@@ -14,8 +14,7 @@ type action =
 [@react.component]
 let make = (~greeting) => {
 
-  <div/>
-  /*
+    /*
   initialState: () => {count: 0, showTicker: false},
 
   reducer: (action, state) =>
@@ -30,7 +29,7 @@ let make = (~greeting) => {
       ++ string_of_int(self.state.count)
       ++ " times(s)\n";
 
-    <fragment>
+    <>
       <button className="testCell" onClick={_event => self.send(Click)}>
         {ReasonReact.string(message)}
       </button>
@@ -40,7 +39,7 @@ let make = (~greeting) => {
       {self.state.showTicker
          ? resultComponent(<Ticker greeting="A ticker! " />)
          : resultComponent(ReasonReact.string("Hi! No ticker!"))}
-    </fragment>
+    </>
   },
   */
 };

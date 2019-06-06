@@ -22,7 +22,5 @@ let make = () => {
     maxJump: 12
   };
 
-  //<fragment>
-    <InfiniteSlider config={sliderConfig} current={0/*self.state.currentNote.offset*/}/>
-  //</fragment>
+  <InfiniteSlider config={sliderConfig} current={0/*self.state.currentNote.offset*/}/>
 }

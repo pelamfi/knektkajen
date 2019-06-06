@@ -41,6 +41,5 @@ let make = (~greeting) => {
   },*/
   let message =
     greeting ++ string_of_int(state.ticks) ++ " ticks have passed";
-  //<Fragment> {ReasonReact.string(message)} </Fragment>;
-  <div> {ReasonReact.string(message)} </div>;
+   {ReasonReact.string(message)}
 };
