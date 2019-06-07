@@ -22,8 +22,9 @@ let make = (~greeting: string) => {
       }, {ticks: 0, intervalId: None});
 
   React.useEffect0(() => {
+    Js.log("set interval")
     let intervalId = Js.Global.setInterval(() => {
-      Js.log("Tick")
+      Js.log("tick")
       dispatch(Tick)
     }, 500)
     dispatch(Mount(intervalId))

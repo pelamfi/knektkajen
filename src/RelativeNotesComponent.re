@@ -5,14 +5,13 @@ open Belt.List
 
 [@react.component]
 let make = () => {
-  //initialState: () => initialState,
-  //reducer: (event, state) => ReasonReact.Update(updateState(event, state)),
+
+  let (state, dispatch) = React.useReducer(updateState, initialState)
 
   let componentFactory = (i: int, current: int): reactComponent => { 
     let current = current == i;
-    //let acceptEvent/*: acceptEvent*/ = Js.log("dispatch TODO"); // self.send;
     let note: Note.note = {offset: i};
-    <RelativeNoteComponent current={current} /*acceptEvent={acceptEvent}*/ key={string_of_int(note.offset)} note={note}/>
+    <RelativeNoteComponent current={current} acceptEvent={dispatch} key={string_of_int(note.offset)} note={note}/>
   }
 
   let sliderConfig: InfiniteSlider.config = {
@@ -22,5 +21,5 @@ let make = () => {
     maxJump: 12
   };
 
-  <InfiniteSlider config={sliderConfig} current={0/*self.state.currentNote.offset*/}/>
+  <InfiniteSlider config={sliderConfig} current={state.currentNote.offset}/>
 }

@@ -12,6 +12,11 @@ type slideState =
   | AnimatingWithQueue(animatingWithQueue) // if another prop change comes while we animate
 ;
 
+type slideState2 = 
+  | Idle 
+  | Animating(animating) // CSS animation slide and a timer running
+;
+
 type state = {
     current: int, 
     timeoutId: option(Js.Global.timeoutId),
@@ -31,12 +36,14 @@ let string_of_state = (state: state): string => {
 
 type event = 
 | AnimationComplete
-| AnimationStart(int, int, Js.Global.timeoutId)
+| ChangeCurrent(int)
+| AnimationStart(int, int)
 
 let string_of_event = (event: event): string => {
     switch(event) {
         | AnimationComplete => "AnimationComplete"
-        | AnimationStart(from, toIndex, _) => "AnimationStart(" ++ string_of_int(from) ++ ", " ++ string_of_int(toIndex) ++ ")"
+        | AnimationStart(from, toIndex) => "AnimationStart(" ++ string_of_int(from) ++ ", " ++ string_of_int(toIndex) ++ ")"
+        | ChangeCurrent(current) => "CahangeCurrent(current)"
     }
 }
 
@@ -64,91 +71,66 @@ let elems = (state: state, config: config): list(reactComponent) => {
 
 [@react.component]
 let make = (~config: config, ~current: int) => {
-    let rowClassName = config.styleBaseName ++ "Row";   
+  let rowClassName = config.styleBaseName ++ "Row";   
+  let (slideState, setSlideState) = React.useReducer((_, newState: slideState2): slideState2 => newState, Idle);
 
-    <div>{ReasonReact.string("FIXME")}</div>
-    /*
-    {
+  let (retainedCurrent, setRetainedCurrent) = React.useReducer((_, newCurrent: int): int => newCurrent, 0);
 
-        initialState: (): state => {current: 0, timeoutId: None, slideState: Idle},
-        reducer: (event: event, state: state) => {
-            // ReactSwipeable.foo("foo");
-            let newState = switch(event) {
+  let (state, dispatch) =
+    React.useReducer(
+      (state: state, action: event) => {
+            let newState = switch(action) {
                 | AnimationComplete => 
-                state.timeoutId
-                |> Belt.Option.map(_, Js.Global.clearTimeout)
-                |> ignore;
                 switch (state.slideState) {
-                    | Idle => ReasonReact.NoUpdate
-                    | Animating(_) => ReasonReact.Update({...state, timeoutId: None, slideState: Idle} )
-                    | AnimatingWithQueue({toIndex, toIndexQueued}) => ReasonReact.UpdateWithSideEffects({...state, timeoutId: None, slideState: Idle}, (self): unit => {
-                        self.send(AnimationStart(
-                            toIndex,
-                            toIndexQueued,
-                            Js.Global.setTimeout(
-                                () => {
-                                self.send(AnimationComplete);
-                                },
-                                333,
-                            )));
-                        ()
-                    })
+                    | Idle => state
+                    | Animating(_) => {...state, timeoutId: None, slideState: Idle}
+                    | AnimatingWithQueue({toIndex, toIndexQueued}) => 
+                    //let newSlideState2: slideState2 = Animating({fromIndex: toIndex, toIndex: toIndexQueued});
+                    //setSlideState(newSlideState2);
+                    {...state, timeoutId: None, slideState: Idle}
                 }
-                | AnimationStart(fromIndex, toIndex, timeoutId) =>
-                    ReasonReact.Update({...state, timeoutId: Some(timeoutId), slideState: Animating({fromIndex, toIndex})} )
+                | AnimationStart(fromIndex, toIndex) =>
+                    {...state, slideState: Animating({fromIndex, toIndex})}
+                | ChangeCurrent(newCurrent) =>
+                    {...state, current: newCurrent}
             };
-            let newStateString = switch (newState) {
-                | ReasonReact.NoUpdate => "no update"
-                | ReasonReact.Update(state) => string_of_state(state)
-                | ReasonReact.UpdateWithSideEffects(state, _) => string_of_state(state) ++ " with side effects"
-                | ReasonReact.SideEffects(_) => "side effects"
-            }
-            Js.log("state " ++ string_of_state(state) ++ "->" ++ newStateString ++ " on " ++ string_of_event(event) )
-            newState
-        },
-        retainedProps: current,
-        willReceiveProps: (self) => {
-            let newState = if (self.retainedProps !== current) {
-                switch self.state.slideState {
-                    | Idle =>
-                        let timeoutId = 
-                            Js.Global.setTimeout(
-                                () => {
-                                self.send(AnimationComplete);
-                                },
-                                333,
-                            );
-                        {current: current, timeoutId: Some(timeoutId), 
-                            slideState: Animating({fromIndex: self.state.current, toIndex: current})}
-                    | Animating(animState) =>
-                        {...self.state, current: current, slideState: AnimatingWithQueue({fromIndex: animState.fromIndex, toIndex: animState.toIndex, toIndexQueued: current})}
-                    | AnimatingWithQueue(animState) =>
-                        {...self.state, current: current, slideState: AnimatingWithQueue({...animState, toIndexQueued: current})}
-                }
-            } else {
-                self.state
-            }
 
-            Js.log("state by props " ++ string_of_state(self.state) ++ "->" ++ string_of_state(newState) ++ string_of_int(self.retainedProps) ++ " " ++ string_of_int(current));
-
+            Js.log("state " ++ string_of_state(newState) ++ "->" ++ string_of_state(newState) ++ " on " ++ string_of_event(action) )
             newState
-        },
-        render: self => {
-            let paddingAnimClass = switch(self.state.slideState) {
-                | Animating(_) | AnimatingWithQueue(_)=> " " ++ config.styleBaseName ++ "Padding-anim"
-                | Idle => ""
-            }
-            let paddingClass = config.styleBaseName ++ "Padding-" ++ string_of_int(paddingCount(self.state, config.maxJump))
-             ++ paddingAnimClass;
-            let e: list(reactComponent) = elems(self.state, config);
-            Js.log("paddingclass " ++ paddingClass);
-            <div className="infiniteSlider">
-                <div className={rowClassName}>
-                    <div className={paddingClass}/>
-                    {asReact(e)}
-                </div>
-            </div>
-        },
+      }, {current: 0, timeoutId: None, slideState: Idle});
+
+    React.useEffect1(() => {
+        switch slideState {
+            | Animating({fromIndex, toIndex}) =>
+            dispatch(AnimationStart(toIndex, toIndex))
+            let timeoutId = Js.Global.setTimeout(() => dispatch(AnimationComplete), 333)
+            Some(() => Js.Global.clearTimeout(timeoutId))
+            | Idle => None
+        }
+    }, Belt.List.toArray([slideState]));
+
+    if (current !== retainedCurrent) {
+        dispatch(ChangeCurrent(current))
+        setRetainedCurrent(current)
+        Js.log("current " ++ string_of_int(retainedCurrent) ++ "->" ++ string_of_int(current));
     }
-    */
+
+    let paddingAnimClass = switch(slideState) {
+        | Animating(_) => " " ++ config.styleBaseName ++ "Padding-anim"
+        | Idle => ""
+    }
+
+    let paddingClass = config.styleBaseName ++ "Padding-" ++ string_of_int(paddingCount(state, config.maxJump))
+        ++ paddingAnimClass;
+
+    let e: list(reactComponent) = elems(state, config);
+
+    Js.log("paddingclass " ++ paddingClass);
+
+    <div className="infiniteSlider">
+        <div className={rowClassName}>
+            <div className={paddingClass}/>
+            {asReact(e)}
+        </div>
+    </div>
 };
