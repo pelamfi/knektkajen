@@ -1,11 +1,13 @@
-
-type reactComponent2 = ReasonReact.componentSpec(ReasonReact.stateless,
+type reactComponent2 =
+  ReasonReact.componentSpec(
+    ReasonReact.stateless,
     ReasonReact.stateless,
     ReasonReact.noRetainedProps,
     ReasonReact.noRetainedProps,
-    ReasonReact.actionless);
+    ReasonReact.actionless,
+  );
 
-type reactComponent = ReasonReact.reactElement
+type reactComponent = ReasonReact.reactElement;
 
 let asReact = (elementList: list(reactComponent)): ReasonReact.reactElement =>
   ReasonReact.array(Belt.List.toArray(elementList));

@@ -43,4 +43,4 @@ type levelProgress =
   | Begin
   | LevelUp
   | LevelDown
-  | FastUp; // you can get back to previous highest level by answering easier level questions correctly successively
+  | FastUp /* you can get back to previous highest level by answering easier level questions correctly successivel*/;

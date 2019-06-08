@@ -3,4 +3,4 @@ open Note;
 
 let notesBoxNotes = (state: state): list(note) =>
   // range(state.currentNote, (-12) * 2, 12 * 2 + 1);
-   range(middleC, (-12) * 2, 12 * 2 + 1);
+  range(middleC, (-12) * 2, 12 * 2 + 1);

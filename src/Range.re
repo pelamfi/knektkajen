@@ -11,6 +11,4 @@ let map = (r: range, f: int => 'a): list('a) => {
   };
 };
 
-let make = (left: int, right: int): range => Range(left, right);
-
-// let example: list(int) = Range(1, 10) |> map(_, i => i * 10)
+let make = (left: int, right: int): range => Range(left, right) /* let example: list(int) = Range(1, 10) |> map(_, i => i * 10*/;
