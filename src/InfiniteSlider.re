@@ -147,6 +147,9 @@ let make = (~config: config, ~current: int) => {
     dispatch(ChangeCurrent(current));
   };
 
+  ReactSwipeable.swipeTest();
+  ReactSwipeable.useSwipeableInternal("foo");
+
   let paddingAnimClass =
     switch (state.slideState) {
     | Animating(_) => " " ++ config.styleBaseName ++ "Padding-anim"

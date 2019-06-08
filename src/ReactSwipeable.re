@@ -7,8 +7,10 @@ type error;
 /*
  import { useSwipeable, Swipeable } from 'react-swipeable';
 
- function swipe() {
-     return <h1>Hello, {props.name}</h1>;
+ */
+let swipeTest = [%bs.raw {|
+function swipeTest() {
+    const ReactSwipeable = require("react-swipeable");
      let config = {
          delta: 10,
          preventDefaultTouchmoveEvent: true,
@@ -17,12 +19,13 @@ type error;
          rotationAngle: 0,
      }
      function swipeEventHandler(eventData) {
-
+         console.log(handlers)
      }
-     let handlers = useSwipeable({ onSwiped: (eventData) => swipeEventHandler, ...config })
+     let handlers = ReactSwipeable.useSwipeable({ onSwiped: (eventData) => swipeEventHandler, ...config })
      console.log(handlers)
  }
- */
-
+ |}];
+ 
 [@bs.val] [@bs.module "react-swipeable"]
-external foo: string => array(string) = "useSwipeable";
+
+external useSwipeableInternal: string => array(string) = "useSwipeable";
