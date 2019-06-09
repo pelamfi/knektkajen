@@ -1,11 +1,10 @@
 open ReactUtil;
 open Belt.List;
 open Belt.Option;
-
 open Webapi;
 open Webapi.Dom.Element;
 
-type componentFactory = (int, int) => reactComponent;
+type componentFactory = (int, int, string) => reactComponent;
 
 type animating = {
   fromIndex: int,
@@ -61,9 +60,14 @@ let string_of_event = (event: event): string => {
 type config = {
   componentFactory,
   styleBaseName: string,
+  componentBaseName: string,
   itemsWindow: RangeOfInt.range_of_int, // current is at 0
   maxJump: int,
 };
+
+let id = (config: config, i: int): string => {
+  "inf-slider-item-" ++ config.componentBaseName ++ "-" ++ string_of_int(i)
+}
 
 let paddingCount = (slideState: slideState, maxJump: int): int => {
   switch (slideState) {
@@ -80,15 +84,25 @@ let elems = (state: state, config: config): list(reactComponent) => {
     | Animating({fromIndex}) => fromIndex
     };
   config.itemsWindow
-  |> RangeOfInt.map(_, i => config.componentFactory(i + offset, state.current));
+  |> RangeOfInt.map(_, i => config.componentFactory(i + offset, state.current, id(config, i+offset)));
 };
 
-let handleClick = (click: ReactEvent.Mouse.t): unit => {
-    let doc = Webapi.Dom.document
-    let rowElement = Webapi.Dom.Document.getElementById("notesRow", doc); // |> map(_, (element: Dom.element) => {e => Element.getElementById()})
-    let boundingClientRect = map(rowElement, Webapi.Dom.Element.getBoundingClientRect)
-    let width = map(boundingClientRect, Dom.DomRect.width)
-    Js.log(mapWithDefault(width, "no width", Js.Float.toString));
+let handleClick = (state: state, config: config, click: ReactEvent.Mouse.t): unit => {
+    let doc = Webapi.Dom.document;
+    let id0 = id(config, state.current);
+    let id1 = id(config, state.current + 1);
+    let xRange = (id: string): option(RangeOfInt.range_of_int) => {
+      let e = Webapi.Dom.Document.getElementById(id, doc);
+      let boundingClientRect = map(e, Webapi.Dom.Element.getBoundingClientRect);
+      map(boundingClientRect, r => {
+        let left = int_of_float(Dom.DomRect.left(r));
+        let width = int_of_float(Dom.DomRect.width(r));
+        RangeOfInt.make(left, left + width)
+      })
+    };
+    let item0XRange = xRange(id0)
+    let item1XRange = xRange(id1)
+    //Js.log(mapWithDefault(width, "no width", Js.Float.toString));
     Js.log(string_of_int(ReactEvent.Mouse.clientX(click)));
   };
 
@@ -184,7 +198,7 @@ let make = (~config: config, ~current: int) => {
   // let jsonStringify: ('a) => string = [%bs.raw {|function(x){return JSON.stringify(x)}|}];
 
   
-  <div className="infiniteSlider" onClick={handleClick}>
+  <div className="infiniteSlider" onClick={event => handleClick(state, config, event)}>
     <div id="notesRow" className=rowClassName>
       <div className=paddingClass />
       {asReact(e)}
