@@ -123,8 +123,8 @@ let chromaticNoteNames: list(noteName) = [
   B,
 ];
 
-let range = (base: note, start: int, rangeEnd: int): list(note) => {
-  Range.make(start, rangeEnd) |> Range.map(_, x => {offset: base.offset + x});
+let range_of_int = (base: note, start: int, rangeEnd: int): list(note) => {
+  RangeOfInt.make(start, rangeEnd) |> RangeOfInt.map(_, x => {offset: base.offset + x});
 };
 
 // TODO: Interval should probably be sum type of 12 items

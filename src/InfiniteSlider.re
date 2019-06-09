@@ -2,6 +2,9 @@ open ReactUtil;
 open Belt.List;
 open Belt.Option;
 
+open Webapi;
+open Webapi.Dom.Element;
+
 type componentFactory = (int, int) => reactComponent;
 
 type animating = {
@@ -58,7 +61,7 @@ let string_of_event = (event: event): string => {
 type config = {
   componentFactory,
   styleBaseName: string,
-  itemsWindow: Range.range, // current is at 0
+  itemsWindow: RangeOfInt.range_of_int, // current is at 0
   maxJump: int,
 };
 
@@ -77,8 +80,17 @@ let elems = (state: state, config: config): list(reactComponent) => {
     | Animating({fromIndex}) => fromIndex
     };
   config.itemsWindow
-  |> Range.map(_, i => config.componentFactory(i + offset, state.current));
+  |> RangeOfInt.map(_, i => config.componentFactory(i + offset, state.current));
 };
+
+let handleClick = (click: ReactEvent.Mouse.t): unit => {
+    let doc = Webapi.Dom.document
+    let rowElement = Webapi.Dom.Document.getElementById("notesRow", doc); // |> map(_, (element: Dom.element) => {e => Element.getElementById()})
+    let boundingClientRect = map(rowElement, Webapi.Dom.Element.getBoundingClientRect)
+    let width = map(boundingClientRect, Dom.DomRect.width)
+    Js.log(mapWithDefault(width, "no width", Js.Float.toString));
+    Js.log(string_of_int(ReactEvent.Mouse.clientX(click)));
+  };
 
 [@react.component]
 let make = (~config: config, ~current: int) => {
@@ -118,28 +130,31 @@ let make = (~config: config, ~current: int) => {
             }
           };
 
-        Js.log(
+        Js.log( 
           "state "
-          ++ string_of_state(newState)
+          ++ string_of_state(state)
           ++ "->"
           ++ string_of_state(newState)
           ++ " on "
           ++ string_of_event(action),
         );
+
         newState;
       },
       {current: 0, animationToIndexQueued: None, slideState: Idle},
     );
 
   React.useEffect1(
-    () =>
+    () => {
+      Js.log("foo");
       switch (state.slideState) {
       | Animating(_) =>
+        Js.log("bar");
         let timeoutId =
           Js.Global.setTimeout(() => dispatch(AnimationComplete), 333);
         Some(() => Js.Global.clearTimeout(timeoutId));
       | Idle => None
-      },
+      }},
     toArray([state.slideState]),
   );
 
@@ -166,8 +181,11 @@ let make = (~config: config, ~current: int) => {
 
   Js.log("paddingclass " ++ paddingClass);
 
-  <div className="infiniteSlider">
-    <div className=rowClassName>
+  // let jsonStringify: ('a) => string = [%bs.raw {|function(x){return JSON.stringify(x)}|}];
+
+  
+  <div className="infiniteSlider" onClick={handleClick}>
+    <div id="notesRow" className=rowClassName>
       <div className=paddingClass />
       {asReact(e)}
     </div>

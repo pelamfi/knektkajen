@@ -14,6 +14,7 @@
   "author": "Peter Lamberg",
   "license": "UNLICENSED",
   "dependencies": {
+    "bs-webapi": "^0.15.2",
     "css-loader": "^2.1.1",
     "foundation-sites": "^6.5.3",
     "html-webpack-plugin": "^3.2.0",

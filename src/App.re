@@ -36,7 +36,7 @@ let menuButton =
 let make = () => {
   let (state, dispatch) =
     React.useReducer(
-      (state: state, action: action) =>
+      (_: state, action: action) =>
         switch (action) {
         | ChangeMode(mode) => {mainUiMode: mode}
         },

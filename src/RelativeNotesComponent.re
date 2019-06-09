@@ -1,7 +1,5 @@
 open RelativeNotesState;
-open RelativeNotesViewModel;
 open ReactUtil;
-open Belt.List;
 
 [@react.component]
 let make = () => {
@@ -21,7 +19,7 @@ let make = () => {
   let sliderConfig: InfiniteSlider.config = {
     componentFactory,
     styleBaseName: "relativeNotes",
-    itemsWindow: Range.make((-12) * 2, 12 * 2),
+    itemsWindow: RangeOfInt.make((-12) * 2, 12 * 2),
     maxJump: 12,
   };
 
