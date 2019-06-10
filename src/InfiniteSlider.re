@@ -61,6 +61,7 @@ type config = {
   componentFactory,
   styleBaseName: string,
   componentBaseName: string,
+  itemSelectedDispatch: int => unit,
   itemsWindow: RangeOfInt.range_of_int, // current is at 0
   maxJump: int,
 };
@@ -91,19 +92,17 @@ let handleClick = (state: state, config: config, click: ReactEvent.Mouse.t): uni
     let doc = Webapi.Dom.document;
     let id0 = id(config, state.current);
     let id1 = id(config, state.current + 1);
-    let xRange = (id: string): option(RangeOfInt.range_of_int) => {
+    let left = (id: string): option(int) => {
       let e = Webapi.Dom.Document.getElementById(id, doc);
       let boundingClientRect = map(e, Webapi.Dom.Element.getBoundingClientRect);
-      map(boundingClientRect, r => {
-        let left = int_of_float(Dom.DomRect.left(r));
-        let width = int_of_float(Dom.DomRect.width(r));
-        RangeOfInt.make(left, left + width)
-      })
+      map(boundingClientRect, Dom.DomRect.left) |> map(_, int_of_float);
     };
-    let item0XRange = xRange(id0)
-    let item1XRange = xRange(id1)
-    //Js.log(mapWithDefault(width, "no width", Js.Float.toString));
-    Js.log(string_of_int(ReactEvent.Mouse.clientX(click)));
+    map(left(id0), left0 => map(left(id1), left1 => {
+      let dist = left1 - left0;
+      let clickX = ReactEvent.Mouse.clientX(click);
+      let slot = (clickX - left0) / dist;
+      config.itemSelectedDispatch(state.current + slot);
+    })) |> ignore
   };
 
 [@react.component]

@@ -21,6 +21,10 @@ let make = () => {
     componentFactory,
     styleBaseName: "relativeNotes",
     componentBaseName: "relativeNotes",
+    itemSelectedDispatch: i => {
+      let note: Note.note = {offset: i};
+      dispatch(ClickNote(note))
+    },
     itemsWindow: RangeOfInt.make((-12) * 2, 12 * 2),
     maxJump: 12,
   };
