@@ -118,7 +118,12 @@ let getItemSlotPlacement = (state: state, config: config): option(itemSlotPlacem
 let handleClick = (state: state, config: config, click: ReactEvent.Mouse.t): unit => {
     map(state.itemSlotPlacement, placement => {
       let clickX = ReactEvent.Mouse.clientX(click);
-      let slot = (clickX - placement.currentLeftX) / placement.width;
+
+      let slot = switch (clickX > placement.currentLeftX) {
+        | true => (clickX - placement.currentLeftX) / placement.width
+        | false => (clickX - placement.currentLeftX) / placement.width - 1
+      }
+      
       config.itemSelectedDispatch(state.current + slot);
 
       Js.logMany(toArray(["dist", string_of_int(placement.width), 
@@ -191,14 +196,15 @@ let make = (~config: config, ~current: int) => {
   Js.log(string_of_slide_state(state.slideState));
   React.useEffect2(
     () => {
-      Js.log("FOOOOO");
       switch (state.slideState) {
       | Animating(_) =>
         let timeoutId =
           Js.Global.setTimeout(() => dispatch(AnimationComplete), 333);
         Some(() => Js.Global.clearTimeout(timeoutId));
-      | Idle(_) => 
-        dispatch(SlotPlacement(getItemSlotPlacement(state, config)))
+      | Idle(currentAt) => 
+        if (currentAt == state.current) { // not if we have animation queued
+          dispatch(SlotPlacement(getItemSlotPlacement(state, config)))
+        }
         dispatch(CheckNextAnimation)
         None
       }},
