@@ -1,6 +1,6 @@
 open ReactUtil;
 open Belt.List;
-open Belt.Option;
+open Belt
 open Webapi;
 open Webapi.Dom.Element;
 
@@ -47,7 +47,7 @@ let string_of_state = (state: state): string => {
   ++ string_of_slide_state(state.slideState)
   ++ " animationToIndexQueued: "
   ++ (
-    state.animationToIndexQueued |> mapWithDefault(_, "none", string_of_animating)
+    state.animationToIndexQueued |> Option.mapWithDefault(_, "none", string_of_animating)
   )
   ++ "]";
 };
@@ -82,13 +82,9 @@ let id = (config: config, i: int): string => {
   "inf-slider-item-" ++ config.componentBaseName ++ "-" ++ string_of_int(i)
 }
 
-let paddingCount = (slideState: slideState, maxJump: int): int => {
-  switch (slideState) {
-  | Idle(_) => 1 + maxJump
-  | Animating({fromIndex, toIndex}) =>
-    min(max(1, 1 + maxJump - (toIndex - fromIndex)), 1 + 2 * maxJump)
-  };
-};
+let id_for_string = (config: config, s: string): string => {
+  "inf-slider-" ++ config.componentBaseName ++ "-" ++ s
+}
 
 let elems = (state: state, config: config): list(reactComponent) => {
   let offset =
@@ -107,16 +103,16 @@ let getItemSlotPlacement = (state: state, config: config): option(itemSlotPlacem
     let id1 = id(config, state.current + 1);
     let left = (id: string): option(int) => {
       let e = Webapi.Dom.Document.getElementById(id, doc);
-      let boundingClientRect = map(e, Webapi.Dom.Element.getBoundingClientRect);
-      map(boundingClientRect, Dom.DomRect.left) |> map(_, int_of_float);
+      let boundingClientRect = Option.map(e, Webapi.Dom.Element.getBoundingClientRect);
+      Option.map(boundingClientRect, Dom.DomRect.left) |> Option.map(_, int_of_float);
     };
-    flatMap(left(id0), left0 => map(left(id1), left1 => {
+    Option.flatMap(left(id0), left0 => Option.map(left(id1), left1 => {
         {currentLeftX: left0, width: left1 - left0}
     }))
 }
 
 let handleClick = (state: state, config: config, click: ReactEvent.Mouse.t): unit => {
-    map(state.itemSlotPlacement, placement => {
+    Option.map(state.itemSlotPlacement, placement => {
       let clickX = ReactEvent.Mouse.clientX(click);
 
       let slot = switch (clickX > placement.currentLeftX) {
@@ -211,6 +207,33 @@ let make = (~config: config, ~current: int) => {
   (0, string_of_slide_state(state.slideState)),
   );
 
+  React.useEffect2(
+    () => {
+      switch (state.slideState) {
+      | Animating(_) =>
+        let startTimestamp: ref(option(float)) = ref(None)
+        let rafId: ref(option(Webapi.rafId)) = ref(None)
+        let rec rafCallback = (time: float) => {
+          let startTime = startTimestamp^ |> Option.mapWithDefault(_, time, x => x)
+          rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
+          startTimestamp := Some(startTime)
+          let doc = Webapi.Dom.document;
+          let timeFromAnimStart = (time -. startTime)
+          let dist = 100.0 *. (timeFromAnimStart /. 333.0)
+          Js.log(int_of_float(dist))
+          let e = Webapi.Dom.Document.getElementById(id_for_string(config, "component"), doc);
+          Option.map(e, Webapi.Dom.Element.setAttribute("style", "margin-left: " ++ string_of_int(int_of_float(dist)) ++ "px")) |> ignore;
+        }
+        rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
+        Some(() => {
+          rafId^ |> Option.map(_, Webapi.cancelAnimationFrame) |> ignore
+          })
+      | Idle(_) => 
+        None
+      }},
+  (0, string_of_slide_state(state.slideState)),
+  );
+
   if (current !== state.current) {
     dispatch(ChangeCurrent(current));
   };
@@ -218,28 +241,12 @@ let make = (~config: config, ~current: int) => {
   //ReactSwipeable.swipeTest();
   //ReactSwipeable.useSwipeableInternal("foo");
 
-  let paddingAnimClass =
-    switch (state.slideState) {
-    | Animating(_) => " " ++ config.styleBaseName ++ "Padding-anim"
-    | Idle(_) => ""
-    };
-
-  let paddingClass =
-    config.styleBaseName
-    ++ "Padding-"
-    ++ string_of_int(paddingCount(state.slideState, config.maxJump))
-    ++ paddingAnimClass;
-
   let e: list(reactComponent) = elems(state, config);
 
-  // Js.log("paddingclass " ++ paddingClass);
-
   // let jsonStringify: ('a) => string = [%bs.raw {|function(x){return JSON.stringify(x)}|}];
-
   
-  <div className="infiniteSlider" onClick={event => handleClick(state, config, event)}>
-    <div id="notesRow" className=rowClassName>
-      <div className=paddingClass />
+  <div id={id_for_string(config, "component")} className="infiniteSlider" onClick={event => handleClick(state, config, event)}>
+    <div className=rowClassName>
       {asReact(e)}
     </div>
   </div>;

@@ -135,18 +135,6 @@ body {
   }
 }
 
-@for $i from 1 through (1 + 12 * 2) {
-    .relativeNotesPadding-#{$i} {
-        @extend .small-#{$i};
-        @extend .cell;
-    }
-}
-
-.relativeNotesPadding-anim {
-    transition-property: width;
-    transition-duration: 0.333s;
-}
-
 .noteCell {
     @extend .small-1;
     @extend .cell;
