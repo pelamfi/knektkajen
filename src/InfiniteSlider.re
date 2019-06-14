@@ -229,22 +229,6 @@ let make = (~config: config, ~current: int) => {
     );
 
   Js.log(string_of_slide_state(state.slideState));
-  React.useEffect2(
-    () => {
-      switch (state.slideState) {
-      | Animating(_) =>
-        let timeoutId =
-          Js.Global.setTimeout(() => dispatch(AnimationComplete), slideAnimationDuration);
-        Some(() => Js.Global.clearTimeout(timeoutId));
-      | Idle(currentAt) => 
-        if (currentAt == state.current) { // not if we have animation queued
-          dispatch(SlotPlacement(getItemSlotPlacement(state, config)))
-        }
-        dispatch(CheckNextAnimation)
-        None
-      }},
-  (0, string_of_slide_state(state.slideState)),
-  );
 
   React.useEffect2(
     () => {
@@ -262,12 +246,20 @@ let make = (~config: config, ~current: int) => {
           // Js.log(widthStyle)
           let e = Webapi.Dom.Document.getElementById(id_for_string(config, "padding"), doc);
           Option.map(e, Webapi.Dom.Element.setAttribute("style", "width: " ++ widthStyle)) |> ignore;
+
+          if (t >= 1.0) {
+            dispatch(AnimationComplete)
+          }
         }
         rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
         Some(() => {
           rafId^ |> Option.map(_, Webapi.cancelAnimationFrame) |> ignore
           })
-      | Idle(_) => 
+      | Idle(currentAt) => 
+        if (currentAt == state.current) { // not if we have animation queued
+          dispatch(SlotPlacement(getItemSlotPlacement(state, config)))
+        }
+        dispatch(CheckNextAnimation)
         None
       }},
   (0, string_of_slide_state(state.slideState)),
