@@ -83,7 +83,7 @@ let cMajorName: scaleName = {noteName: C, scaleClass: Major};
 
 let moduloOffset = (n: note): int =>
   if (n.offset < 0) {
-    11 - abs(n.offset) mod 12;
+    11 - (-n.offset - 1) mod 12;
   } else {
     n.offset mod 12;
   };
@@ -205,7 +205,7 @@ let asString = (n: noteName): string => {
   | C => "C"
   | CSharpDFlat(Sharp) => {js|C♯|js}
   | CSharpDFlat(Flat) => {js|D♭|js}
-  | D => "D"
+  |   D => "D"
   | DSharpEFlat(Sharp) => {js|D♯|js}
   | DSharpEFlat(Flat) => {js|E♭|js}
   | E => "E"
