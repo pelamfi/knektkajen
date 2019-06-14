@@ -15,7 +15,7 @@ type slideState =
   | Idle(int)
   | Animating(animating); // CSS animation slide and a timer running
 
-type itemSlotPlacement = {currentLeftX: int, width: int}
+type itemSlotPlacement = {currentLeftX: float, width: float}
 
 type state = {
   current: int,
@@ -31,6 +31,8 @@ let string_of_animating = (a: animating): string => {
     ++ string_of_int(a.toIndex)
     ++ "}"
 }
+
+let slideAnimationDuration = 333
 
 let string_of_slide_state = (state: slideState): string => {
   switch (state) {
@@ -86,45 +88,82 @@ let id_for_string = (config: config, s: string): string => {
   "inf-slider-" ++ config.componentBaseName ++ "-" ++ s
 }
 
+let paddingWidthStyle = (dist: float): string => {
+  string_of_int(int_of_float(dist)) ++ "px !important"
+} 
+
+let paddingStyle = (dist: float) => {
+  "width: " ++ paddingWidthStyle(dist)
+} 
+
+
+let paddingWidth = (state: state, t: float, items: int): float => state.itemSlotPlacement 
+|> Option.mapWithDefault(_, 0.0, isp => {t *. float_of_int(items) *. isp.width})
+
+
+let animationVars = (animating: animating, state: state, t: float): (int, string) => {
+  let {fromIndex, toIndex} = animating;
+
+  let (replacedItems, paddingItems, tDirectional) = if (fromIndex < toIndex) { // going right
+    (toIndex - fromIndex, toIndex - fromIndex, 1.0 -. t); // going right, shrink padding from full to 0, replace n items
+  } else {
+    (0, fromIndex - toIndex, t); // going left, grow padding from 0 to required amount
+  };
+
+  (replacedItems, paddingWidthStyle(paddingWidth(state, tDirectional, paddingItems)));
+}
+
 let elems = (state: state, config: config): list(reactComponent) => {
-  let offset =
-    switch (state.slideState) {
-    | Idle(currentAt) => currentAt
-    | Animating({fromIndex}) => fromIndex
-    };
-  config.itemsWindow
-  |> RangeOfInt.map(_, i => config.componentFactory(i + offset, state.current, id(config, i+offset)));
+  switch (state.slideState) {
+  | Idle(currentAt) => 
+    let index = i => i + currentAt
+    config.itemsWindow |> RangeOfInt.map(_, i => config.componentFactory(index(i), state.current, id(config, index(i))));
+  | Animating(animating) =>
+    let (replacedItems, widthStyle) = animationVars(animating, state, 0.0)
+    let style = ReactDOMRe.Style.make(~width = widthStyle)();
+    let paddingItem: reactComponent = <div id={id_for_string(config, "padding")} className="infiniteSliderAnimationPadding" style={style} />;
+    let index = i => animating.fromIndex + i
+    let normalItems = config.itemsWindow
+      |> RangeOfInt.drop(_, replacedItems)
+      |> RangeOfInt.map(_, i => config.componentFactory(index(i), state.current, id(config, index(i))));
+
+    [paddingItem, ...normalItems];
+  };
 };
+
+
 
 
 let getItemSlotPlacement = (state: state, config: config): option(itemSlotPlacement) => {
     let doc = Webapi.Dom.document;
     let id0 = id(config, state.current);
     let id1 = id(config, state.current + 1);
-    let left = (id: string): option(int) => {
+    let left = (id: string): option(float) => {
       let e = Webapi.Dom.Document.getElementById(id, doc);
       let boundingClientRect = Option.map(e, Webapi.Dom.Element.getBoundingClientRect);
-      Option.map(boundingClientRect, Dom.DomRect.left) |> Option.map(_, int_of_float);
+      Option.map(boundingClientRect, Dom.DomRect.left);
     };
     Option.flatMap(left(id0), left0 => Option.map(left(id1), left1 => {
-        {currentLeftX: left0, width: left1 - left0}
+        {currentLeftX: left0, width: left1 -. left0}
     }))
 }
 
 let handleClick = (state: state, config: config, click: ReactEvent.Mouse.t): unit => {
     Option.map(state.itemSlotPlacement, placement => {
-      let clickX = ReactEvent.Mouse.clientX(click);
+      let clickX = float_of_int(ReactEvent.Mouse.clientX(click))
 
       let slot = switch (clickX > placement.currentLeftX) {
-        | true => (clickX - placement.currentLeftX) / placement.width
-        | false => (clickX - placement.currentLeftX) / placement.width - 1
+        | true => (clickX -. placement.currentLeftX) /. placement.width
+        | false => (clickX -. placement.currentLeftX) /. placement.width -. 1.0
       }
       
-      config.itemSelectedDispatch(state.current + slot);
+      let selected = state.current + int_of_float(slot)
+      config.itemSelectedDispatch(selected);
 
-      Js.logMany(toArray(["dist", string_of_int(placement.width), 
-      "clickX", string_of_int(clickX),
-      "slot", string_of_int(slot),
+      Js.logMany(toArray(["dist", Js.Float.toString(placement.width), 
+      "clickX", Js.Float.toString(clickX),
+      "slot", Js.Float.toString(slot),
+      "selected", string_of_int(selected),
       "cur", string_of_int(state.current)]));
       
     }) |> ignore
@@ -195,7 +234,7 @@ let make = (~config: config, ~current: int) => {
       switch (state.slideState) {
       | Animating(_) =>
         let timeoutId =
-          Js.Global.setTimeout(() => dispatch(AnimationComplete), 333);
+          Js.Global.setTimeout(() => dispatch(AnimationComplete), slideAnimationDuration);
         Some(() => Js.Global.clearTimeout(timeoutId));
       | Idle(currentAt) => 
         if (currentAt == state.current) { // not if we have animation queued
@@ -210,7 +249,7 @@ let make = (~config: config, ~current: int) => {
   React.useEffect2(
     () => {
       switch (state.slideState) {
-      | Animating(_) =>
+      | Animating(animating) =>
         let startTimestamp: ref(option(float)) = ref(None)
         let rafId: ref(option(Webapi.rafId)) = ref(None)
         let rec rafCallback = (time: float) => {
@@ -218,11 +257,11 @@ let make = (~config: config, ~current: int) => {
           rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
           startTimestamp := Some(startTime)
           let doc = Webapi.Dom.document;
-          let timeFromAnimStart = (time -. startTime)
-          let dist = 100.0 *. (timeFromAnimStart /. 333.0)
-          Js.log(int_of_float(dist))
-          let e = Webapi.Dom.Document.getElementById(id_for_string(config, "component"), doc);
-          Option.map(e, Webapi.Dom.Element.setAttribute("style", "margin-left: " ++ string_of_int(int_of_float(dist)) ++ "px")) |> ignore;
+          let t = (time -. startTime) /. float_of_int(slideAnimationDuration);
+          let (_, widthStyle) = animationVars(animating, state, t);
+          // Js.log(widthStyle)
+          let e = Webapi.Dom.Document.getElementById(id_for_string(config, "padding"), doc);
+          Option.map(e, Webapi.Dom.Element.setAttribute("style", "width: " ++ widthStyle)) |> ignore;
         }
         rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
         Some(() => {
@@ -245,7 +284,7 @@ let make = (~config: config, ~current: int) => {
 
   // let jsonStringify: ('a) => string = [%bs.raw {|function(x){return JSON.stringify(x)}|}];
   
-  <div id={id_for_string(config, "component")} className="infiniteSlider" onClick={event => handleClick(state, config, event)}>
+  <div className="infiniteSlider" onClick={event => handleClick(state, config, event)}>
     <div className=rowClassName>
       {asReact(e)}
     </div>

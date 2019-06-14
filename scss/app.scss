@@ -79,7 +79,12 @@
     @extend .callout;
 }
 
-$grid-columns: 13+12+25+12+13;
+// 25 items in visible part: 12 + 12 + 1 (1 extra C to be able to jump full octave)
+// 12 extra items on both ends for scrolling buffer
+// when starting to scroll the extra items at the shrinking end are replaced
+// with a padding element with animated width
+
+$grid-columns: 12+12+12+1+12;
 $xy-block-grid-max: 1;
 $grid-column-gutter: 1px;
 $grid-margin-gutters: 1px;
@@ -100,38 +105,44 @@ body {
     overflow: hidden;
 }
 
+// replaces 0 or 12 items on left end when animation starts
+.infiniteSliderAnimationPadding {
+    @extend .small-12;
+    @extend .cell;
+}
+
 .relativeNotesRow {
     @extend .grid-x;
     @extend .relative-notes-grid;
-    margin-left: -150% !important;
-    margin-right: -150% !important;
+    margin-left: -45% !important;
+    margin-right: -45% !important;
 }
 
-@media screen and (max-width: 992px) {
+@media screen and (max-width: 1080px) {
+  .relativeNotesRow {
+    margin-left: -80% !important;
+    margin-right: -80% !important;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .relativeNotesRow {
+    margin-left: -120% !important;
+    margin-right: -120% !important;
+  }
+}
+
+@media screen and (max-width: 660px) {
+  .relativeNotesRow {
+    margin-left: -150% !important;
+    margin-right: -150% !important;
+  }
+}
+
+@media screen and (max-width: 550px) {
   .relativeNotesRow {
     margin-left: -200% !important;
     margin-right: -200% !important;
-  }
-}
-
-@media screen and (max-width: 700px) {
-  .relativeNotesRow {
-    margin-left: -300% !important;
-    margin-right: -300% !important;
-  }
-}
-
-@media screen and (max-width: 500px) {
-  .relativeNotesRow {
-    margin-left: -400% !important;
-    margin-right: -400% !important;
-  }
-}
-
-@media screen and (max-width: 350px) {
-  .relativeNotesRow {
-    margin-left: -500% !important;
-    margin-right: -500% !important;
   }
 }
 
