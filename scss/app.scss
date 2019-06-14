@@ -109,6 +109,7 @@ body {
 .infiniteSliderAnimationPadding {
     @extend .small-12;
     @extend .cell;
+    margin: 0 !important;
 }
 
 .relativeNotesRow {

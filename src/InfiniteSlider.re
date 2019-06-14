@@ -89,7 +89,7 @@ let id_for_string = (config: config, s: string): string => {
 }
 
 let paddingWidthStyle = (dist: float): string => {
-  string_of_int(int_of_float(dist)) ++ "px !important"
+  string_of_int(int_of_float(dist)) ++ "px"
 } 
 
 let paddingStyle = (dist: float) => {
@@ -120,8 +120,9 @@ let elems = (state: state, config: config): list(reactComponent) => {
     config.itemsWindow |> RangeOfInt.map(_, i => config.componentFactory(index(i), state.current, id(config, index(i))));
   | Animating(animating) =>
     let (replacedItems, widthStyle) = animationVars(animating, state, 0.0)
-    let style = ReactDOMRe.Style.make(~width = widthStyle)();
-    let paddingItem: reactComponent = <div id={id_for_string(config, "padding")} className="infiniteSliderAnimationPadding" style={style} />;
+    Js.log(widthStyle);
+    let style = ReactDOMRe.Style.make(~background="red", ~width = widthStyle, ());
+    let paddingItem: reactComponent = <div key="padding" id={id_for_string(config, "padding")} className="infiniteSliderAnimationPadding" style={style} />;
     let index = i => animating.fromIndex + i
     let normalItems = config.itemsWindow
       |> RangeOfInt.drop(_, replacedItems)
