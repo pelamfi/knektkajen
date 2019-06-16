@@ -2,9 +2,9 @@
   "name": "knektkajen",
   "version": "0.1.0",
   "scripts": {
-    "build": "bsb -make-world",
-    "start": "bsb -make-world -w",
-    "clean": "bsb -clean-world",
+    "build": "npx bsb -make-world",
+    "start": "npx bsb -make-world -w",
+    "clean": "npx bsb -clean-world",
     "test": "echo \"Error: no test specified\" && exit 1",
     "webpack": "webpack -w",
     "webpack:production": "NODE_ENV=production webpack",
