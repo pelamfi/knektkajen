@@ -5,6 +5,15 @@
 So far there is nothing here. Just trying out various web technologies
 and getting the feel for them.
 
+## Prepare for building project
+
+The npx is used to run bsb locally, but npx still needs to be installed globally
+This however reduces chances of using wrong bsb versions.
+
+```sh
+npm install -g npx 
+```
+
 ## Run Project
 
 ```sh

@@ -29,5 +29,5 @@ let make = () => {
     maxJump: 12,
   };
 
-  <InfiniteSlider config=sliderConfig current={state.currentNote.offset} />;
+  <InfiniteSlider config=sliderConfig selected={state.currentNote.offset} />;
 };
