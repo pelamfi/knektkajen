@@ -13,7 +13,7 @@ type animationState = {
 
 type command =
   | Start(animationState)
-  | KeepRunning
+  | Nop
   | Stop;
 
 type dispatchCompleted = (animationState) => unit;
@@ -41,8 +41,6 @@ let string_of_event = (event: event): string => {
 let paddingWidthStyle = (dist: float): string => {
   string_of_int(int_of_float(dist)) ++ "px"
 } 
-
-type animationVars = {pxPos: float, replacedItems: int, spanItems: int, currentItem: int, tInsideItem: float, tDirectional: float};
 
 let animationStateMachine = (state, event): state => {
   switch (state, event) {
@@ -95,6 +93,8 @@ let timerEffect = (state, dispatch: actionDispatch): effect => {
   }
 };
 
+let string_of_animationState = (animationState: animationState): string => "TODO";
+
 [@react.component]
 let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {
 
@@ -102,7 +102,7 @@ let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: strin
   
   switch (command, state) {
     | (Start(animationState), Idle) => dispatch(Start(animationState))
-    | (KeepRunning, Animating(animationState)) when animationState.t >= 1.0 =>
+    | (Nop, Animating(animationState)) when animationState.t >= 1.0 =>
       dispatchCompleted(animationState)
       dispatch(Stop)
     | (Stop, Animating(animationState)) => 

@@ -6,45 +6,44 @@ open Webapi;
 
 type componentFactory = (int, int, string) => reactComponent;
 
-type animating = {
+type animation = {
   fromIndex: int,
-  toIndex: int,
-  t: float,
+  toIndex: int
 };
 
-type slideState =
+type animationState =
   | Idle
-  | RequestStop(animating)
-  | Animating(animating); // CSS animation slide and a timer running
+  | Animating(animation); // CSS animation slide and a timer running
 
 type itemSlotPlacement = {centeredLeftX: float, width: float}
 
 type state = {
   selected: int,
   centered: int, // if animation is running, this is where the last centering animation was aiming for (toIndex)
-  animationToIndexQueued: option(animating),
-  slideState,
+  queuedAnimation: option(animation),
+  animationState,
+  paddingCommand: InfiniteSliderPadding.command,
   itemSlotPlacement: option(itemSlotPlacement)
 };
 
-let string_of_animating = (a: animating): string => {
+let string_of_animating = (a: animation): string => {
   "{"
     ++ string_of_int(a.fromIndex)
     ++ ", "
     ++ string_of_int(a.toIndex)
     ++ ", "
-    ++ Js.Float.toString(a.t)
+    ++ ""
+    //++ Js.Float.toString(a.t)
     ++ "}"
 }
 
 let slideAnimationDuration = 3333
 
-let string_of_slide_state = (state: slideState): string => {
+let string_of_slide_state = (state: animationState): string => {
   switch (state) {
   | Idle => "Idle"
-  | RequestStop(animating) => "RequestStop(" ++ string_of_animating(animating) ++ ")"
-  | Animating(animating) =>
-    "Animating(" ++ string_of_animating(animating) ++ ")"
+  | Animating(animation) =>
+    "Animating(" ++ string_of_animating(animation) ++ ")"
   };
 };
 
@@ -53,23 +52,23 @@ let string_of_state = (state: state): string => {
   ++ string_of_int(state.selected)
   ++ " centered:"
   ++ string_of_int(state.centered)
-  ++ " slideState:"
-  ++ string_of_slide_state(state.slideState)
-  ++ " animationToIndexQueued:"
+  ++ " animationState:"
+  ++ string_of_slide_state(state.animationState)
+  ++ " queuedAnimation:"
   ++ (
-    state.animationToIndexQueued |> Option.mapWithDefault(_, "None", string_of_animating)
+    state.queuedAnimation |> Option.mapWithDefault(_, "None", string_of_animating)
   )
   ++ "]";
 };
 
 type event =
-  | AnimationComplete(animating)
+  | AnimationComplete(InfiniteSliderPadding.animationState)
   | ChangeSelected(int)
   | SlotPlacement(option(itemSlotPlacement));
 
 let string_of_event = (event: event): string => {
   switch (event) {
-  | AnimationComplete(animating) => "AnimationComplete(" ++ string_of_animating(animating) ++ ")"
+  | AnimationComplete(paddingAnimationState) => "AnimationComplete(" ++ /*InfiniteSliderPadding.string_of_animationState(paddingAnimationState) ++ */ ")"
   | ChangeSelected(newSelected) =>
     "ChangeSelected(" ++ string_of_int(newSelected) ++ ")"
   | SlotPlacement(_) =>
@@ -92,16 +91,13 @@ let id = (config: config, i: int): string => {
 
 let id_for_string = (config: config, s: string): string => {
   "inf-slider-" ++ config.componentBaseName ++ "-" ++ s
-}
+};
 
-let paddingWidthStyle = (dist: float): string => {
-  string_of_int(int_of_float(dist)) ++ "px"
-} 
-
+/*
 type animationVars = {pxPos: float, replacedItems: int, spanItems: int, currentItem: int, tInsideItem: float, tDirectional: float}
 
-let computeAnimationVars = (animating: animating, itemSlotPlacement: option(itemSlotPlacement)): animationVars => {
-  let {fromIndex, toIndex, t} = animating;
+let computeAnimationVars = (animation: animation, itemSlotPlacement: option(itemSlotPlacement)): animationVars => {
+  let {fromIndex, toIndex, t} = animation;
 
   let (replacedItems, spanItems, tDirectional) = if (fromIndex < toIndex) { // going right
     (toIndex - fromIndex, toIndex - fromIndex, 1.0 -. t); // going right, shrink padding from full to 0, replace n items
@@ -123,7 +119,7 @@ let string_of_animationVars = (a: animationVars): string => {
     a.replacedItems, a.spanItems, a.pxPos, a.tDirectional, a.tInsideItem, a.currentItem)
 }
 
-let switch_animation = (itemSlotPlacement: option(itemSlotPlacement), prev: animating, next: animating): animating => {
+let switch_animation = (itemSlotPlacement: option(itemSlotPlacement), prev: animation, next: animation): animation => {
   let prevVars = computeAnimationVars(prev, itemSlotPlacement)
   let nextVars = computeAnimationVars(next, itemSlotPlacement)
   let fromIndex = prev.fromIndex + prevVars.currentItem;
@@ -131,28 +127,51 @@ let switch_animation = (itemSlotPlacement: option(itemSlotPlacement), prev: anim
   Js.log("switch_animation tSwitched:" ++ string_of_float(tSwitched) ++ " fromIndex:" ++ string_of_int(fromIndex) );
   {fromIndex, toIndex: next.toIndex, t: tSwitched}
 };
+*/
 
-let elems = (state: state, config: config): list(reactComponent) => {
-  let workaround = (animating: animating): list(reactComponent) => {
-    let animationVars = computeAnimationVars(animating, state.itemSlotPlacement)
-    Js.log("ELEMS" ++ string_of_animationVars(animationVars));
-    let widthStyle = paddingWidthStyle(animationVars.pxPos);
-    let style = ReactDOMRe.Style.make(~background="red", ~width = widthStyle, ());
-    let paddingItem: reactComponent = <div key="padding" id={id_for_string(config, "padding")} className="infiniteSliderAnimationPadding" style={style} />;
-    let index = i => animating.fromIndex + i
-    let normalItems = config.itemsWindow
-      |> RangeOfInt.drop(_, animationVars.replacedItems)
-      |> RangeOfInt.map(_, i => config.componentFactory(index(i), state.selected, id(config, index(i))));
+let switchAnimation = (itemSlotPlacement: option(itemSlotPlacement), prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, animation): (InfiniteSliderPadding.command, animation) => {
+  let prevSpanItems = Js.Math.abs_int(prevAnimation.fromIndex - prevAnimation.toIndex);
+  let nextSpanItems = Js.Math.abs_int(animation.fromIndex - animation.toIndex);
+  let tPerPrevItems = prevPaddingState.t /. float_of_int(prevSpanItems);
+  let tInsideItem = JsUtil.fmod(prevPaddingState.t, float_of_int(prevSpanItems));
+  let currentItemInPrevAnimation = int_of_float(tPerPrevItems);
+  let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
+  //let tSwitched = tInsideItem ./ float_of_int(nextSpanItems);
+  (
+    Start({t: 0.0, 
+      request: {durationS: float_of_int(slideAnimationDuration) /. 1000.0, startWidth: 0.0, endWidth: 100.0}}), 
+    {fromIndex: fromIndexNew, toIndex: animation.toIndex}
+  )
+}
 
-    [paddingItem, ...normalItems];
+let animationPaddingCommand = (itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.command => {
+  Nop
+}
+
+let replacedItems = (animation: animation): int => {
+  if (animation.fromIndex < animation.toIndex) { // going right
+    animation.toIndex - animation.fromIndex
+  } else {
+    0
   };
+}
 
-  switch (state.slideState) {
+let elems = (state: state, config: config, dispatchCompleted: InfiniteSliderPadding.dispatchCompleted): list(reactComponent) => {
+
+  switch (state.animationState) {
   | Idle => 
     let index = i => i + state.centered
     config.itemsWindow |> RangeOfInt.map(_, i => config.componentFactory(index(i), state.selected, id(config, index(i))));
-  | Animating(animating) | RequestStop(animating) =>
-    workaround(animating) // Work around bug https://github.com/BuckleScript/bucklescript/issues/3609
+  | Animating(animation) =>
+    let paddingItem: reactComponent = 
+      <InfiniteSliderPadding key="padding" command={state.paddingCommand} dispatchCompleted={dispatchCompleted} id={id_for_string(config, "padding")}/>;
+
+    let index = i => animation.fromIndex + i
+    let normalItems = config.itemsWindow
+      |> RangeOfInt.drop(_, replacedItems(animation))
+      |> RangeOfInt.map(_, i => config.componentFactory(index(i), state.selected, id(config, index(i))));
+
+    [paddingItem, ...normalItems];
   };
 };
 
@@ -200,45 +219,49 @@ let make = (~config: config, ~selected: int) => {
     React.useReducer(
       (state: state, action: event) => {
         let newState =
-          switch (action) {
-          | AnimationComplete(prevAnimating) =>
-            switch (state.animationToIndexQueued) {
+          switch (action, state.animationState) {
+          | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
+            switch (state.queuedAnimation) {
             | Some(queuedAnimation) => 
-              let switchedAnimation = switch_animation(state.itemSlotPlacement, prevAnimating, queuedAnimation);
+              let (switchedPaddingCommand, switchedAnimation) = switchAnimation(state.itemSlotPlacement, prevPaddingAnimationState, prevAnimation, queuedAnimation);
               {
                 ...state,
-                animationToIndexQueued: None,
+                queuedAnimation: None,
                 centered: switchedAnimation.fromIndex, 
-                slideState: Animating(switchedAnimation),
+                animationState: Animating(switchedAnimation),
+                paddingCommand: switchedPaddingCommand
               }
-            | _ => {...state, centered: prevAnimating.toIndex, animationToIndexQueued: None, slideState: Idle}
+            | _ => {...state, centered: prevAnimation.toIndex, queuedAnimation: None, animationState: Idle}
             }
-          | ChangeSelected(newSelected) =>
-            switch (state.slideState) {
-            | Idle => {
+          | (ChangeSelected(newSelected), Idle) =>
+              let animation = {fromIndex: state.centered, toIndex: newSelected};
+              let paddingCommand = animationPaddingCommand(state.itemSlotPlacement, animation);
+              { 
                 ...state,
                 selected: newSelected,
-                slideState:
-                  Animating({fromIndex: state.centered, toIndex: newSelected, t: 0.0}),
+                paddingCommand: paddingCommand,
+                animationState: Animating(animation),
               }
-            | Animating(animating) | RequestStop(animating) => 
+          | (ChangeSelected(newSelected), Animating(_)) => 
               let queuedAnimation = if (state.centered == newSelected) {
                 None
               } else {
-                Some({fromIndex: state.centered, toIndex: newSelected, t: 0.0})
+                Some({fromIndex: state.centered, toIndex: newSelected})
               };
               {
                 ...state,
                 selected: newSelected,
-                animationToIndexQueued: queuedAnimation,
-                slideState: RequestStop(animating)
+                paddingCommand: Stop,
+                queuedAnimation: queuedAnimation
               }
+          | (SlotPlacement(info), _) => {
+              ...state,
+              itemSlotPlacement: info
             }
-          | SlotPlacement(info) => {
-            ...state,
-            itemSlotPlacement: info
+          | (AnimationComplete(_), Idle) =>
+            Js.log("Should be impossible transition?")
+            state
           }
-          };
 
         Js.log( 
           "state "
@@ -251,66 +274,29 @@ let make = (~config: config, ~selected: int) => {
 
         newState;
       },
-      {selected: 0, centered: 0, animationToIndexQueued: None, slideState: Idle, itemSlotPlacement: None},
+      {selected: 0, centered: 0, queuedAnimation: None, animationState: Idle, itemSlotPlacement: None, paddingCommand: Nop},
     );
 
-  Js.log(string_of_slide_state(state.slideState));
+  Js.log(string_of_slide_state(state.animationState));
 
-  React.useEffect2(
-    () => {
-      let tRef: ref(option(float)) = ref(None)
-      switch (state.slideState) {
-      | Animating(animating) =>
-        let startTimestamp: ref(option(float)) = ref(None)
-        let rafId: ref(option(Webapi.rafId)) = ref(None)
-        let rec rafCallback = (time: float) => {
-          let startTime = startTimestamp^ |> Option.mapWithDefault(_, time, x => x)
-          rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
-          startTimestamp := Some(startTime)
-          let doc = Webapi.Dom.document;
-          let t = (time -. startTime) /. float_of_int(slideAnimationDuration);
-          tRef := Some(t)
-          let newAnimating = {...animating, t: t}
-          let animVars = computeAnimationVars(newAnimating, state.itemSlotPlacement);
-          // Js.log(widthStyle ++ " foo " ++ (state.animationToIndexQueued |> Option.mapWithDefault(_, "-", a => string_of_int(a.toIndex))));
-          let e = Webapi.Dom.Document.getElementById(id_for_string(config, "padding"), doc);
-          let widthStyle = paddingWidthStyle(animVars.pxPos)
-          Option.map(e, Webapi.Dom.Element.setAttribute("style", "width: " ++ widthStyle)) |> ignore;
-
-          if (t >= 1.0) {
-            Js.log("ANIMATION COMPLETE, END " ++ Js.Float.toString(t));
-            tRef := None
-            dispatch(AnimationComplete(newAnimating))
-          }
-        }
-        rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
-        Some(() => {
-          if (tRef^ != None) {
-            let finalT = Option.mapWithDefault(tRef^, 1.0, x => x)
-            Js.log("ANIMATION COMPLETE, CLEANUP " ++ Js.Float.toString(finalT))
-            dispatch(AnimationComplete({...animating, t: finalT}))
-          }
-          rafId^ |> Option.map(_, Webapi.cancelAnimationFrame) |> ignore
-          })
-      | RequestStop(_) =>
-        // Not idle, but this causes the previous effect to complete, then we can start the next animation once the
-        // AnimationComplete event arrives
-        None
-      | Idle => 
+  React.useEffect2(() => {
+    if (state.selected != selected) {
+      dispatch(ChangeSelected(selected))
+    }
+    None
+    }, ((), selected))
+  
+  React.useLayoutEffect2(() => {
+      if (state.animationState == Idle) {
         dispatch(SlotPlacement(getItemSlotPlacement(state, config)))
-        None
-      }},
-  (0, string_of_slide_state(state.slideState)),
-  );
-
-  if (selected !== state.selected) {
-    dispatch(ChangeSelected(selected));
-  };
+      }
+      None
+    }, ((), state.animationState))
 
   //ReactSwipeable.swipeTest();
   //ReactSwipeable.useSwipeableInternal("foo");
 
-  let e: list(reactComponent) = elems(state, config);
+  let e: list(reactComponent) = elems(state, config, paddingAnimationState => {dispatch(AnimationComplete(paddingAnimationState))});
 
   // let jsonStringify: ('a) => string = [%bs.raw {|function(x){return JSON.stringify(x)}|}];
   
