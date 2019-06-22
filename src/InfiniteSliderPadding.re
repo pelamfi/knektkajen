@@ -1,14 +1,10 @@
 open Belt
 
-type animationRequest = {
+type animationState = {
+  t: float,
   durationS: float,
   startWidth: float,
   endWidth: float,
-};
-
-type animationState = {
-  t: float,
-  request: animationRequest
 };
 
 type command =
@@ -38,6 +34,29 @@ let string_of_event = (event: event): string => {
   };
 };
 
+let stringOfAnimationState = (state: animationState): string => {
+  "{t:" 
+  ++ Js.Float.toString(state.t)
+  ++ ", durationS:"
+  ++ Js.Float.toString(state.durationS)
+  ++ ", startWidth:"
+  ++ Js.Float.toString(state.startWidth)
+  ++ ", endWidth:"
+  ++ Js.Float.toString(state.endWidth)
+  ++ "}"  
+}
+
+let stringOfCommand = (command): string => {
+  switch (command) {
+  | Nop => "Nop"
+  | Stop => "Stop"
+  | Start(animationState) => stringOfAnimationState(animationState)
+  }
+};
+
+
+
+
 let paddingWidthStyle = (dist: float): string => {
   string_of_int(int_of_float(dist)) ++ "px"
 } 
@@ -49,7 +68,7 @@ let animationStateMachine = (state, event): state => {
   | (Idle, Start(animationState)) =>
     Animating(animationState)
   | (Animating(animationState), Frame(tFromStart)) =>
-    let newT = tFromStart /. animationState.request.durationS
+    let newT = tFromStart /. animationState.durationS
     let newAnimationState = {...animationState, t: newT}
     Animating(newAnimationState)
   | (state, _) =>
@@ -63,7 +82,7 @@ let computeWidth = (state: state): float => {
 switch (state) {
     | Idle => 0.0
     | Animating(animationState) =>
-      let width = (animationState.request.endWidth -. animationState.request.startWidth) *. animationState.t;
+      let width = (animationState.endWidth -. animationState.startWidth) *. animationState.t;
       width
   }  
 };
@@ -92,8 +111,6 @@ let timerEffect = (state, dispatch: actionDispatch): effect => {
       }  
   }
 };
-
-let string_of_animationState = (animationState: animationState): string => "TODO";
 
 [@react.component]
 let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {

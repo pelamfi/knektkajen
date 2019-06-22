@@ -31,15 +31,12 @@ let string_of_animating = (a: animation): string => {
     ++ string_of_int(a.fromIndex)
     ++ ", "
     ++ string_of_int(a.toIndex)
-    ++ ", "
-    ++ ""
-    //++ Js.Float.toString(a.t)
     ++ "}"
 }
 
 let slideAnimationDuration = 3333
 
-let string_of_slide_state = (state: animationState): string => {
+let string_of_animation_state = (state: animationState): string => {
   switch (state) {
   | Idle => "Idle"
   | Animating(animation) =>
@@ -53,7 +50,9 @@ let string_of_state = (state: state): string => {
   ++ " centered:"
   ++ string_of_int(state.centered)
   ++ " animationState:"
-  ++ string_of_slide_state(state.animationState)
+  ++ string_of_animation_state(state.animationState)
+  ++ " paddingCommand:"
+  ++ InfiniteSliderPadding.stringOfCommand(state.paddingCommand)
   ++ " queuedAnimation:"
   ++ (
     state.queuedAnimation |> Option.mapWithDefault(_, "None", string_of_animating)
@@ -129,6 +128,8 @@ let switch_animation = (itemSlotPlacement: option(itemSlotPlacement), prev: anim
 };
 */
 
+let slideAnimationDurationS = float_of_int(slideAnimationDuration) /. 1000.0
+
 let switchAnimation = (itemSlotPlacement: option(itemSlotPlacement), prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, animation): (InfiniteSliderPadding.command, animation) => {
   let prevSpanItems = Js.Math.abs_int(prevAnimation.fromIndex - prevAnimation.toIndex);
   let nextSpanItems = Js.Math.abs_int(animation.fromIndex - animation.toIndex);
@@ -138,14 +139,24 @@ let switchAnimation = (itemSlotPlacement: option(itemSlotPlacement), prevPadding
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   //let tSwitched = tInsideItem ./ float_of_int(nextSpanItems);
   (
-    Start({t: 0.0, 
-      request: {durationS: float_of_int(slideAnimationDuration) /. 1000.0, startWidth: 0.0, endWidth: 100.0}}), 
+    Start(
+      {t: 0.0, 
+        durationS: slideAnimationDurationS, startWidth: 0.0, endWidth: 100.0
+      }), 
     {fromIndex: fromIndexNew, toIndex: animation.toIndex}
   )
 }
 
 let animationPaddingCommand = (itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.command => {
-  Nop
+  let {fromIndex, toIndex} = animation;
+  let (fromItems, toItems) = if (fromIndex < toIndex) { // going right
+    (float_of_int(toIndex - fromIndex), 0.0) // replace some elements & shrink to create illusion of scrolling right
+  } else {
+    (0.0, float_of_int(fromIndex - toIndex)) // grow
+  };
+  let (startWidth, endWidth) = Option.mapWithDefault(itemSlotPlacement, (0.0, 0.0), isp => {(fromItems *. isp.width, toItems *. isp.width)});
+  Start({t: 0.0, 
+      durationS: slideAnimationDurationS, startWidth, endWidth})
 }
 
 let replacedItems = (animation: animation): int => {
@@ -277,7 +288,7 @@ let make = (~config: config, ~selected: int) => {
       {selected: 0, centered: 0, queuedAnimation: None, animationState: Idle, itemSlotPlacement: None, paddingCommand: Nop},
     );
 
-  Js.log(string_of_slide_state(state.animationState));
+  Js.log(string_of_animation_state(state.animationState));
 
   React.useEffect2(() => {
     if (state.selected != selected) {
