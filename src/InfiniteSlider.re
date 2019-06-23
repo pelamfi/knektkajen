@@ -34,7 +34,7 @@ let stringOfAnimation = (a: animation): string => {
     ++ "}"
 }
 
-let slideAnimationDurationMs = 1000.0
+let slideAnimationDurationMs = 3333.0
 
 let stringOfAnimationState = (state: animationState): string => {
   switch (state) {

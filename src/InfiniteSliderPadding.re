@@ -71,8 +71,8 @@ let stateMachine = (state, event): state => {
     Idle
   | (Idle, Start(animationState)) =>
     Animating(animationState)
-  | (Animating(animationState), Frame(tFromStart)) =>
-    let newT = tFromStart /. animationState.durationMs
+  | (Animating(animationState), Frame(msFromStart)) =>
+    let newT = msFromStart /. animationState.durationMs
     let newAnimationState = {...animationState, t: newT}
     Animating(newAnimationState)
   | (state, _) =>
@@ -85,8 +85,11 @@ let computeWidth = (state: state): float => {
 switch (state) {
     | Idle => 0.0
     | Animating(animationState) =>
-      let width = (animationState.endWidth -. animationState.startWidth) *. animationState.t;
-      width
+      if (animationState.endWidth < animationState.startWidth) {
+        (animationState.startWidth -. animationState.endWidth) *. (1.0 -. animationState.t)
+      } else {
+        (animationState.endWidth -. animationState.startWidth) *. animationState.t
+      }
   }  
 };
 
@@ -131,19 +134,10 @@ let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: strin
   
   switch (command, state) {
     | (Start(animationState), Idle) => dispatch(Start(animationState))
-      Js.log("foo start")
-    | (_, Animating(animationState)) when animationState.t >= 1.0 =>
-      Js.log("foo")
+    | (Stop, Animating(animationState)) | (_, Animating(animationState)) when animationState.t >= 1.0 =>
       dispatchCompleted(animationState)
       dispatch(Stop)
-    | (Stop, Animating(animationState)) => 
-      Js.log("bar")
-      dispatchCompleted(animationState)
-      dispatch(Stop)
-    | (_, Animating(animationState)) => 
-      Js.log(stringOfAnimationState(animationState) ++ " FOO " ++ stringOfCommand(command))
-    | (_, Idle) =>
-      ()
+    | (_, _) => ()
   };
 
   React.useEffect2(timerEffect(state, dispatch), (0, state != Idle));
