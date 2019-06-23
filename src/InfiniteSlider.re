@@ -20,7 +20,7 @@ type itemSlotPlacement = {centeredLeftX: float, width: float}
 type state = {
   selected: int,
   centered: int, // if animation is running, this is where the last centering animation was aiming for (toIndex)
-  queuedAnimation: option(animation),
+  queuedAnimation: option(int),
   animationState,
   paddingCommand: InfiniteSliderPadding.command,
   itemSlotPlacement: option(itemSlotPlacement)
@@ -55,7 +55,7 @@ let stringOfState = (state: state): string => {
   ++ InfiniteSliderPadding.stringOfCommand(state.paddingCommand)
   ++ " queuedAnimation:"
   ++ (
-    state.queuedAnimation |> Option.mapWithDefault(_, "None", stringOfAnimation)
+    state.queuedAnimation |> Option.mapWithDefault(_, "None", string_of_int)
   )
   ++ "]";
 };
@@ -92,15 +92,15 @@ let id_for_string = (config: config, s: string): string => {
   "inf-slider-" ++ config.componentBaseName ++ "-" ++ s
 };
 
-let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, animation): (float, animation) => {
+let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, queuedAnimationToIndex: int): (float, animation) => {
   let prevSpanItems = Js.Math.abs_int(prevAnimation.fromIndex - prevAnimation.toIndex);
-  let nextSpanItems: int = Js.Math.abs_int(animation.fromIndex - animation.toIndex);
   let tPerPrevItems = prevPaddingState.t /. float_of_int(prevSpanItems);
   let tInsideItem: float = JsUtil.fmod(prevPaddingState.t, float_of_int(prevSpanItems));
   let currentItemInPrevAnimation = int_of_float(tPerPrevItems);
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
+  let nextSpanItems: int = Js.Math.abs_int(fromIndexNew - queuedAnimationToIndex);
   let tSwitched = tInsideItem /. float_of_int(nextSpanItems);
-  (tSwitched, {fromIndex: fromIndexNew, toIndex: animation.toIndex})
+  (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex})
 }
 
 let animationPaddingCommand = (t: float, itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.command => {
@@ -182,8 +182,8 @@ let stateMachine = (state: state, action: event): state => {
   switch (action, state.animationState) {
   | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
     switch (state.queuedAnimation) {
-    | Some(queuedAnimation) => 
-      let (tSwitched, switchedAnimation) = switchAnimation(prevPaddingAnimationState, prevAnimation, queuedAnimation);
+    | Some(queuedAnimationToIndex) => 
+      let (tSwitched, switchedAnimation) = switchAnimation(prevPaddingAnimationState, prevAnimation, queuedAnimationToIndex);
       {
         ...state,
         queuedAnimation: None,
@@ -203,16 +203,16 @@ let stateMachine = (state: state, action: event): state => {
         animationState: Animating(animation),
       }
   | (ChangeSelected(newSelected), Animating(_)) => 
-      let queuedAnimation = if (state.centered == newSelected) {
+      let queuedAnimationToIndex = if (state.centered == newSelected) {
         None
       } else {
-        Some({fromIndex: state.centered, toIndex: newSelected})
+        Some(newSelected)
       };
       {
         ...state,
         selected: newSelected,
         paddingCommand: Stop,
-        queuedAnimation: queuedAnimation
+        queuedAnimation: queuedAnimationToIndex
       }
   | (SlotPlacement(info), _) => {
       ...state,
