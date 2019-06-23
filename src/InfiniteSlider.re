@@ -26,7 +26,7 @@ type state = {
   itemSlotPlacement: option(itemSlotPlacement)
 };
 
-let string_of_animating = (a: animation): string => {
+let stringOfAnimation = (a: animation): string => {
   "{"
     ++ string_of_int(a.fromIndex)
     ++ ", "
@@ -36,26 +36,26 @@ let string_of_animating = (a: animation): string => {
 
 let slideAnimationDuration = 3333
 
-let string_of_animation_state = (state: animationState): string => {
+let stringOfAnimationState = (state: animationState): string => {
   switch (state) {
   | Idle => "Idle"
   | Animating(animation) =>
-    "Animating(" ++ string_of_animating(animation) ++ ")"
+    "Animating(" ++ stringOfAnimation(animation) ++ ")"
   };
 };
 
-let string_of_state = (state: state): string => {
+let stringOfState = (state: state): string => {
   "[ selected:"
   ++ string_of_int(state.selected)
   ++ " centered:"
   ++ string_of_int(state.centered)
   ++ " animationState:"
-  ++ string_of_animation_state(state.animationState)
+  ++ stringOfAnimationState(state.animationState)
   ++ " paddingCommand:"
   ++ InfiniteSliderPadding.stringOfCommand(state.paddingCommand)
   ++ " queuedAnimation:"
   ++ (
-    state.queuedAnimation |> Option.mapWithDefault(_, "None", string_of_animating)
+    state.queuedAnimation |> Option.mapWithDefault(_, "None", stringOfAnimation)
   )
   ++ "]";
 };
@@ -65,9 +65,9 @@ type event =
   | ChangeSelected(int)
   | SlotPlacement(option(itemSlotPlacement));
 
-let string_of_event = (event: event): string => {
+let stringOfEvent = (event: event): string => {
   switch (event) {
-  | AnimationComplete(paddingAnimationState) => "AnimationComplete(" ++ /*InfiniteSliderPadding.string_of_animationState(paddingAnimationState) ++ */ ")"
+  | AnimationComplete(paddingAnimationState) => "AnimationComplete(" ++ InfiniteSliderPadding.stringOfAnimationState(paddingAnimationState) ++ ")"
   | ChangeSelected(newSelected) =>
     "ChangeSelected(" ++ string_of_int(newSelected) ++ ")"
   | SlotPlacement(_) =>
@@ -222,74 +222,73 @@ let handleClick = (state: state, config: config, click: ReactEvent.Mouse.t): uni
     }) |> ignore
   };
 
+let stateMachine = (state: state, action: event): state => {
+  switch (action, state.animationState) {
+  | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
+    switch (state.queuedAnimation) {
+    | Some(queuedAnimation) => 
+      let (switchedPaddingCommand, switchedAnimation) = switchAnimation(state.itemSlotPlacement, prevPaddingAnimationState, prevAnimation, queuedAnimation);
+      {
+        ...state,
+        queuedAnimation: None,
+        centered: switchedAnimation.fromIndex, 
+        animationState: Animating(switchedAnimation),
+        paddingCommand: switchedPaddingCommand
+      }
+    | _ => {...state, centered: prevAnimation.toIndex, queuedAnimation: None, animationState: Idle}
+    }
+  | (ChangeSelected(newSelected), Idle) =>
+      let animation = {fromIndex: state.centered, toIndex: newSelected};
+      let paddingCommand = animationPaddingCommand(state.itemSlotPlacement, animation);
+      { 
+        ...state,
+        selected: newSelected,
+        paddingCommand: paddingCommand,
+        animationState: Animating(animation),
+      }
+  | (ChangeSelected(newSelected), Animating(_)) => 
+      let queuedAnimation = if (state.centered == newSelected) {
+        None
+      } else {
+        Some({fromIndex: state.centered, toIndex: newSelected})
+      };
+      {
+        ...state,
+        selected: newSelected,
+        paddingCommand: Stop,
+        queuedAnimation: queuedAnimation
+      }
+  | (SlotPlacement(info), _) => {
+      ...state,
+      itemSlotPlacement: info
+    }
+  | (AnimationComplete(_), Idle) =>
+    Js.log("Should be impossible transition?")
+    state
+  }
+};
+
+let initialState = {selected: 0, centered: 0, queuedAnimation: None, animationState: Idle, itemSlotPlacement: None, paddingCommand: Nop};
+
+let logTransition = ((state: state, dispatch: event => unit)) => {
+  let wrapped: event => unit = (event: event): unit => {
+    Js.log("transition on event" ++ stringOfEvent(event) ++ " to state " ++ stringOfState(stateMachine(state, event)))
+    dispatch(event)
+  };
+  (state, wrapped)
+};
+
 [@react.component]
 let make = (~config: config, ~selected: int) => {
   let rowClassName = config.styleBaseName ++ "Row";
 
-  let (state, dispatch) =
-    React.useReducer(
-      (state: state, action: event) => {
-        let newState =
-          switch (action, state.animationState) {
-          | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
-            switch (state.queuedAnimation) {
-            | Some(queuedAnimation) => 
-              let (switchedPaddingCommand, switchedAnimation) = switchAnimation(state.itemSlotPlacement, prevPaddingAnimationState, prevAnimation, queuedAnimation);
-              {
-                ...state,
-                queuedAnimation: None,
-                centered: switchedAnimation.fromIndex, 
-                animationState: Animating(switchedAnimation),
-                paddingCommand: switchedPaddingCommand
-              }
-            | _ => {...state, centered: prevAnimation.toIndex, queuedAnimation: None, animationState: Idle}
-            }
-          | (ChangeSelected(newSelected), Idle) =>
-              let animation = {fromIndex: state.centered, toIndex: newSelected};
-              let paddingCommand = animationPaddingCommand(state.itemSlotPlacement, animation);
-              { 
-                ...state,
-                selected: newSelected,
-                paddingCommand: paddingCommand,
-                animationState: Animating(animation),
-              }
-          | (ChangeSelected(newSelected), Animating(_)) => 
-              let queuedAnimation = if (state.centered == newSelected) {
-                None
-              } else {
-                Some({fromIndex: state.centered, toIndex: newSelected})
-              };
-              {
-                ...state,
-                selected: newSelected,
-                paddingCommand: Stop,
-                queuedAnimation: queuedAnimation
-              }
-          | (SlotPlacement(info), _) => {
-              ...state,
-              itemSlotPlacement: info
-            }
-          | (AnimationComplete(_), Idle) =>
-            Js.log("Should be impossible transition?")
-            state
-          }
+  let (state, dispatch) = logTransition(React.useReducer(stateMachine, initialState));
 
-        Js.log( 
-          "state "
-          ++ string_of_state(state)
-          ++ "->"
-          ++ string_of_state(newState)
-          ++ " on "
-          ++ string_of_event(action),
-        );
-
-        newState;
-      },
-      {selected: 0, centered: 0, queuedAnimation: None, animationState: Idle, itemSlotPlacement: None, paddingCommand: Nop},
-    );
-
-  Js.log(string_of_animation_state(state.animationState));
-
+  let dispatch = (event) => {
+    Js.log(stringOfAnimationState(state.animationState));
+    dispatch(event)
+  }
+  
   React.useEffect2(() => {
     if (state.selected != selected) {
       dispatch(ChangeSelected(selected))

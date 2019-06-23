@@ -26,7 +26,7 @@ type event =
 type effectCleanup = unit => unit;
 type actionDispatch = (event) => unit;
 
-let string_of_event = (event: event): string => {
+let stringOfEvent = (event: event): string => {
   switch (event) {
   | Stop  => "AnimationComplete"
   | Start(_)  => "Start"
@@ -46,6 +46,13 @@ let stringOfAnimationState = (state: animationState): string => {
   ++ "}"  
 }
 
+let stringOfState = (state: state): string => {
+  switch(state) {
+    | Idle => "Idle"
+    | Animating(animationState) => "Animating(" ++ stringOfAnimationState(animationState) ++ ")"
+  }
+}
+
 let stringOfCommand = (command): string => {
   switch (command) {
   | Nop => "Nop"
@@ -54,14 +61,11 @@ let stringOfCommand = (command): string => {
   }
 };
 
-
-
-
 let paddingWidthStyle = (dist: float): string => {
   string_of_int(int_of_float(dist)) ++ "px"
 } 
 
-let animationStateMachine = (state, event): state => {
+let stateMachine = (state, event): state => {
   switch (state, event) {
   | (Animating(_), Stop) => 
     Idle
@@ -76,7 +80,6 @@ let animationStateMachine = (state, event): state => {
     state
   }
 };
-
 
 let computeWidth = (state: state): float => {
 switch (state) {
@@ -112,10 +115,18 @@ let timerEffect = (state, dispatch: actionDispatch): effect => {
   }
 };
 
+let logTransition = ((state: state, dispatch: event => unit)) => {
+  let wrapped: event => unit = (event: event): unit => {
+    Js.log("transition on event" ++ stringOfEvent(event) ++ " to state " ++ stringOfState(stateMachine(state, event)))
+    dispatch(event)
+  };
+  (state, wrapped)
+};
+
 [@react.component]
 let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {
 
-  let (state, dispatch) = React.useReducer(animationStateMachine, Idle);
+  let (state, dispatch) = logTransition(React.useReducer(stateMachine, Idle));
   
   switch (command, state) {
     | (Start(animationState), Idle) => dispatch(Start(animationState))
