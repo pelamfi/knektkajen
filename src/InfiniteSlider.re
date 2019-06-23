@@ -34,7 +34,7 @@ let stringOfAnimation = (a: animation): string => {
     ++ "}"
 }
 
-let slideAnimationDurationMs = 3333.0
+let slideAnimationDurationMs = 333.0
 
 let stringOfAnimationState = (state: animationState): string => {
   switch (state) {
@@ -92,60 +92,18 @@ let id_for_string = (config: config, s: string): string => {
   "inf-slider-" ++ config.componentBaseName ++ "-" ++ s
 };
 
-/*
-type animationVars = {pxPos: float, replacedItems: int, spanItems: int, currentItem: int, tInsideItem: float, tDirectional: float}
-
-let computeAnimationVars = (animation: animation, itemSlotPlacement: option(itemSlotPlacement)): animationVars => {
-  let {fromIndex, toIndex, t} = animation;
-
-  let (replacedItems, spanItems, tDirectional) = if (fromIndex < toIndex) { // going right
-    (toIndex - fromIndex, toIndex - fromIndex, 1.0 -. t); // going right, shrink padding from full to 0, replace n items
-  } else {
-    (0, fromIndex - toIndex, t); // going left, grow padding from 0 to required amount
-  };
-
-  let pxPos = Option.mapWithDefault(itemSlotPlacement , 0.0, isp => {tDirectional *. float_of_int(spanItems) *. isp.width});
-
-  let tPerItems = t /. float_of_int(spanItems)
-  let tInsideItem = JsUtil.fmod(t, float_of_int(spanItems))
-  let currentItem = int_of_float(tPerItems);
-
-  {replacedItems, spanItems, pxPos, tDirectional, tInsideItem, currentItem};
-}
-
-let string_of_animationVars = (a: animationVars): string => {
-  Printf.sprintf("[replacedItems:%d, spanItems:%d, pxPos:%f, tDirectional:%f, tInsideItem:%f, currentItem:%d]", 
-    a.replacedItems, a.spanItems, a.pxPos, a.tDirectional, a.tInsideItem, a.currentItem)
-}
-
-let switch_animation = (itemSlotPlacement: option(itemSlotPlacement), prev: animation, next: animation): animation => {
-  let prevVars = computeAnimationVars(prev, itemSlotPlacement)
-  let nextVars = computeAnimationVars(next, itemSlotPlacement)
-  let fromIndex = prev.fromIndex + prevVars.currentItem;
-  let tSwitched = prevVars.tInsideItem /. float_of_int(nextVars.spanItems) // Option.mapWithDefault(itemSlotPlacement, 0.0, isp => {prevVars.tInsideItem *. isp.width});
-  Js.log("switch_animation tSwitched:" ++ string_of_float(tSwitched) ++ " fromIndex:" ++ string_of_int(fromIndex) );
-  {fromIndex, toIndex: next.toIndex, t: tSwitched}
-};
-*/
-
-let switchAnimation = (itemSlotPlacement: option(itemSlotPlacement), prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, animation): (InfiniteSliderPadding.command, animation) => {
+let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, animation): (float, animation) => {
   let prevSpanItems = Js.Math.abs_int(prevAnimation.fromIndex - prevAnimation.toIndex);
-  let nextSpanItems = Js.Math.abs_int(animation.fromIndex - animation.toIndex);
+  let nextSpanItems: int = Js.Math.abs_int(animation.fromIndex - animation.toIndex);
   let tPerPrevItems = prevPaddingState.t /. float_of_int(prevSpanItems);
-  let tInsideItem = JsUtil.fmod(prevPaddingState.t, float_of_int(prevSpanItems));
+  let tInsideItem: float = JsUtil.fmod(prevPaddingState.t, float_of_int(prevSpanItems));
   let currentItemInPrevAnimation = int_of_float(tPerPrevItems);
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
-  //let tSwitched = tInsideItem ./ float_of_int(nextSpanItems);
-  (
-    Start(
-      {t: 0.0, 
-        durationMs: slideAnimationDurationMs, startWidth: 0.0, endWidth: 100.0
-      }), 
-    {fromIndex: fromIndexNew, toIndex: animation.toIndex}
-  )
+  let tSwitched = tInsideItem /. float_of_int(nextSpanItems);
+  (tSwitched, {fromIndex: fromIndexNew, toIndex: animation.toIndex})
 }
 
-let animationPaddingCommand = (itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.command => {
+let animationPaddingCommand = (t: float, itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.command => {
   let {fromIndex, toIndex} = animation;
   let (fromItems, toItems) = if (fromIndex < toIndex) { // going right
     (float_of_int(toIndex - fromIndex), 0.0) // replace some elements & shrink to create illusion of scrolling right
@@ -153,7 +111,7 @@ let animationPaddingCommand = (itemSlotPlacement: option(itemSlotPlacement), ani
     (0.0, float_of_int(fromIndex - toIndex)) // grow
   };
   let (startWidth, endWidth) = Option.mapWithDefault(itemSlotPlacement, (0.0, 0.0), isp => {(fromItems *. isp.width, toItems *. isp.width)});
-  Start({t: 0.0, 
+  Start({t: t, 
       durationMs: slideAnimationDurationMs, startWidth, endWidth})
 }
 
@@ -225,19 +183,19 @@ let stateMachine = (state: state, action: event): state => {
   | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
     switch (state.queuedAnimation) {
     | Some(queuedAnimation) => 
-      let (switchedPaddingCommand, switchedAnimation) = switchAnimation(state.itemSlotPlacement, prevPaddingAnimationState, prevAnimation, queuedAnimation);
+      let (tSwitched, switchedAnimation) = switchAnimation(prevPaddingAnimationState, prevAnimation, queuedAnimation);
       {
         ...state,
         queuedAnimation: None,
         centered: switchedAnimation.fromIndex, 
         animationState: Animating(switchedAnimation),
-        paddingCommand: switchedPaddingCommand
+        paddingCommand: animationPaddingCommand(tSwitched, state.itemSlotPlacement, switchedAnimation)
       }
     | _ => {...state, centered: prevAnimation.toIndex, queuedAnimation: None, animationState: Idle}
     }
   | (ChangeSelected(newSelected), Idle) =>
       let animation = {fromIndex: state.centered, toIndex: newSelected};
-      let paddingCommand = animationPaddingCommand(state.itemSlotPlacement, animation);
+      let paddingCommand = animationPaddingCommand(0.0, state.itemSlotPlacement, animation);
       { 
         ...state,
         selected: newSelected,
