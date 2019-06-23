@@ -34,7 +34,7 @@ let stringOfAnimation = (a: animation): string => {
     ++ "}"
 }
 
-let slideAnimationDuration = 3333
+let slideAnimationDurationMs = 1000.0
 
 let stringOfAnimationState = (state: animationState): string => {
   switch (state) {
@@ -128,8 +128,6 @@ let switch_animation = (itemSlotPlacement: option(itemSlotPlacement), prev: anim
 };
 */
 
-let slideAnimationDurationS = float_of_int(slideAnimationDuration) /. 1000.0
-
 let switchAnimation = (itemSlotPlacement: option(itemSlotPlacement), prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, animation): (InfiniteSliderPadding.command, animation) => {
   let prevSpanItems = Js.Math.abs_int(prevAnimation.fromIndex - prevAnimation.toIndex);
   let nextSpanItems = Js.Math.abs_int(animation.fromIndex - animation.toIndex);
@@ -141,7 +139,7 @@ let switchAnimation = (itemSlotPlacement: option(itemSlotPlacement), prevPadding
   (
     Start(
       {t: 0.0, 
-        durationS: slideAnimationDurationS, startWidth: 0.0, endWidth: 100.0
+        durationMs: slideAnimationDurationMs, startWidth: 0.0, endWidth: 100.0
       }), 
     {fromIndex: fromIndexNew, toIndex: animation.toIndex}
   )
@@ -156,7 +154,7 @@ let animationPaddingCommand = (itemSlotPlacement: option(itemSlotPlacement), ani
   };
   let (startWidth, endWidth) = Option.mapWithDefault(itemSlotPlacement, (0.0, 0.0), isp => {(fromItems *. isp.width, toItems *. isp.width)});
   Start({t: 0.0, 
-      durationS: slideAnimationDurationS, startWidth, endWidth})
+      durationMs: slideAnimationDurationMs, startWidth, endWidth})
 }
 
 let replacedItems = (animation: animation): int => {

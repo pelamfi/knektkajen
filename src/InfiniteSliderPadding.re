@@ -2,7 +2,7 @@ open Belt
 
 type animationState = {
   t: float,
-  durationS: float,
+  durationMs: float,
   startWidth: float,
   endWidth: float,
 };
@@ -26,25 +26,25 @@ type event =
 type effectCleanup = unit => unit;
 type actionDispatch = (event) => unit;
 
-let stringOfEvent = (event: event): string => {
-  switch (event) {
-  | Stop  => "AnimationComplete"
-  | Start(_)  => "Start"
-  | Frame(_) => "Frame"
-  };
-};
-
 let stringOfAnimationState = (state: animationState): string => {
   "{t:" 
   ++ Js.Float.toString(state.t)
-  ++ ", durationS:"
-  ++ Js.Float.toString(state.durationS)
+  ++ ", durationMs:"
+  ++ Js.Float.toString(state.durationMs)
   ++ ", startWidth:"
   ++ Js.Float.toString(state.startWidth)
   ++ ", endWidth:"
   ++ Js.Float.toString(state.endWidth)
   ++ "}"  
 }
+
+let stringOfEvent = (event: event): string => {
+  switch (event) {
+  | Stop  => "AnimationComplete"
+  | Start(animationState)  => "Start("++ stringOfAnimationState(animationState)++ ")"
+  | Frame(t) => "Frame("++Js.Float.toString(t)++")"
+  };
+};
 
 let stringOfState = (state: state): string => {
   switch(state) {
@@ -57,7 +57,7 @@ let stringOfCommand = (command): string => {
   switch (command) {
   | Nop => "Nop"
   | Stop => "Stop"
-  | Start(animationState) => stringOfAnimationState(animationState)
+  | Start(animationState) => "Start(" ++ stringOfAnimationState(animationState) ++ ")"
   }
 };
 
@@ -72,7 +72,7 @@ let stateMachine = (state, event): state => {
   | (Idle, Start(animationState)) =>
     Animating(animationState)
   | (Animating(animationState), Frame(tFromStart)) =>
-    let newT = tFromStart /. animationState.durationS
+    let newT = tFromStart /. animationState.durationMs
     let newAnimationState = {...animationState, t: newT}
     Animating(newAnimationState)
   | (state, _) =>
@@ -126,20 +126,36 @@ let logTransition = ((state: state, dispatch: event => unit)) => {
 [@react.component]
 let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {
 
-  let (state, dispatch) = logTransition(React.useReducer(stateMachine, Idle));
+  // let (state, dispatch) = logTransition(React.useReducer(stateMachine, Idle));
+  let (state, dispatch) = React.useReducer(stateMachine, Idle);
   
   switch (command, state) {
     | (Start(animationState), Idle) => dispatch(Start(animationState))
-    | (Nop, Animating(animationState)) when animationState.t >= 1.0 =>
+      Js.log("foo start")
+    | (_, Animating(animationState)) when animationState.t >= 1.0 =>
+      Js.log("foo")
       dispatchCompleted(animationState)
       dispatch(Stop)
     | (Stop, Animating(animationState)) => 
+      Js.log("bar")
       dispatchCompleted(animationState)
       dispatch(Stop)
-    | (_, _) => ()
+    | (_, Animating(animationState)) => 
+      Js.log(stringOfAnimationState(animationState) ++ " FOO " ++ stringOfCommand(command))
+    | (_, Idle) =>
+      ()
   };
 
   React.useEffect2(timerEffect(state, dispatch), (0, state != Idle));
+
+  switch (state) {
+    | Animating(animationState) =>
+      if (animationState.t >= animationState.durationMs) {
+        dispatchCompleted(animationState)
+        dispatch(Stop)
+      }
+    | Idle => ()
+  }
 
   let width = computeWidth(state)
 
