@@ -281,11 +281,6 @@ let make = (~config: config, ~selected: int) => {
   let rowClassName = config.styleBaseName ++ "Row";
 
   let (state, dispatch) = logTransition(React.useReducer(stateMachine, initialState));
-
-  let dispatch = (event) => {
-    Js.log(stringOfAnimationState(state.animationState));
-    dispatch(event)
-  }
   
   React.useEffect2(() => {
     if (state.selected != selected) {
