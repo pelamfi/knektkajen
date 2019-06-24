@@ -99,11 +99,11 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
   let currentItemInPrevAnimation = int_of_float(tPerPrevItems);
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   let nextSpanItems: int = Js.Math.abs_int(fromIndexNew - queuedAnimationToIndex);
-  let tSwitched = tInsideItem /. float_of_int(nextSpanItems);
+  let tSwitched = (tInsideItem *. float_of_int(prevSpanItems)) /. float_of_int(nextSpanItems);
   (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex})
 }
 
-let animationPaddingCommand = (t: float, itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.command => {
+let animationPaddingCommand = (tInitial: float, itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.command => {
   let {fromIndex, toIndex} = animation;
   let (fromItems, toItems) = if (fromIndex < toIndex) { // going right
     (float_of_int(toIndex - fromIndex), 0.0) // replace some elements & shrink to create illusion of scrolling right
@@ -111,7 +111,7 @@ let animationPaddingCommand = (t: float, itemSlotPlacement: option(itemSlotPlace
     (0.0, float_of_int(fromIndex - toIndex)) // grow
   };
   let (startWidth, endWidth) = Option.mapWithDefault(itemSlotPlacement, (0.0, 0.0), isp => {(fromItems *. isp.width, toItems *. isp.width)});
-  Start({t: t, 
+  Start({tInitial: tInitial, t: tInitial, 
       durationMs: slideAnimationDurationMs, startWidth, endWidth})
 }
 
