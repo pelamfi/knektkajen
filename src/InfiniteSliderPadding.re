@@ -1,8 +1,12 @@
 open Belt
 
+type timerMs = { start: float, last: float }
+
 type animationState = {
+  tInitial: float,
   t: float,
   durationMs: float,
+  timer: option(timerMs),
   startWidth: float,
   endWidth: float,
 };
@@ -15,7 +19,7 @@ type command =
 type dispatchCompleted = (animationState) => unit;
 
 type state =
-  | Idle
+  | Idle(float)
   | Animating(animationState);
 
 type event =
@@ -26,11 +30,28 @@ type event =
 type effectCleanup = unit => unit;
 type actionDispatch = (event) => unit;
 
+let initialState: animationState = {
+  tInitial: 0.0,
+  t: 0.0,
+  durationMs: 1.0,
+  timer: None,
+  startWidth: 0.0,
+  endWidth: 1.0,
+}
+
+let stringOfTimer = (timer: option(timerMs)): string => {
+  Option.mapWithDefault(timer, "-", timer => {"(" ++ Js.Float.toString(timer.start) ++ " - " ++ Js.Float.toString(timer.last) ++ " ms)"})
+}
+
 let stringOfAnimationState = (state: animationState): string => {
-  "{t:" 
+  "{tInitial:"
+  ++ Js.Float.toString(state.tInitial)
+  ++ ", t:" 
   ++ Js.Float.toString(state.t)
   ++ ", durationMs:"
   ++ Js.Float.toString(state.durationMs)
+  ++ ", timer:"
+  ++ stringOfTimer(state.timer)
   ++ ", startWidth:"
   ++ Js.Float.toString(state.startWidth)
   ++ ", endWidth:"
@@ -40,7 +61,7 @@ let stringOfAnimationState = (state: animationState): string => {
 
 let stringOfEvent = (event: event): string => {
   switch (event) {
-  | Stop  => "AnimationComplete"
+  | Stop  => "Stop"
   | Start(animationState)  => "Start("++ stringOfAnimationState(animationState)++ ")"
   | Frame(t) => "Frame("++Js.Float.toString(t)++")"
   };
@@ -48,7 +69,7 @@ let stringOfEvent = (event: event): string => {
 
 let stringOfState = (state: state): string => {
   switch(state) {
-    | Idle => "Idle"
+    | Idle(width) => "Idle("++ Js.Float.toString(width)++ ")"
     | Animating(animationState) => "Animating(" ++ stringOfAnimationState(animationState) ++ ")"
   }
 }
@@ -65,25 +86,9 @@ let paddingWidthStyle = (dist: float): string => {
   string_of_int(int_of_float(dist)) ++ "px"
 } 
 
-let stateMachine = (state, event): state => {
-  switch (state, event) {
-  | (Animating(_), Stop) => 
-    Idle
-  | (Idle, Start(animationState)) =>
-    Animating(animationState)
-  | (Animating(animationState), Frame(msFromStart)) =>
-    let newT = msFromStart /. animationState.durationMs
-    let newAnimationState = {...animationState, t: newT}
-    Animating(newAnimationState)
-  | (state, _) =>
-    Js.log("INVALID TRANSITION")
-    state
-  }
-};
-
 let computeWidth = (state: state): float => {
 switch (state) {
-    | Idle => 0.0
+    | Idle(width) => width
     | Animating(animationState) =>
       if (animationState.endWidth < animationState.startWidth) {
         (animationState.startWidth -. animationState.endWidth) *. (1.0 -. animationState.t)
@@ -93,26 +98,64 @@ switch (state) {
   }  
 };
 
+let duration = (timer: option(timerMs)): float => {
+  switch (timer) {
+    | Some(timer) => timer.last -. timer.start
+    | None => 0.0
+  }
+}
+
+let updatedLast = (timer: option(timerMs), newLast: float): option(timerMs) => {
+  switch (timer) {
+    | Some(timer) => Some({start: timer.start, last: Js.Math.max_float(timer.start, newLast)})
+    | None => Some({start: newLast, last: newLast})
+  }
+}
+
+let restart = (timer: option(timerMs)): option(timerMs) => {
+  switch (timer) {
+    | Some(timer) => Some({start: timer.last, last: timer.last})
+    | None => None
+  }
+}
+
+let stateMachine = (state, event): state => {
+  let newState = switch (state, event) {
+  | (Animating(_), Stop) => 
+    Idle(computeWidth(state))
+  | (Idle(_), Start(animationState)) =>
+    Animating(animationState)
+  | (Animating(animationState), Frame(timerMs)) =>
+    let updatedTimer = updatedLast(animationState.timer, timerMs)
+    let msFromStart = duration(updatedTimer)
+    let newT = Js.Math.max_float(0.0, (msFromStart /. animationState.durationMs) +. animationState.tInitial)
+    Animating({...animationState, t: newT, timer: updatedTimer})
+  | (state, _) =>
+    Js.log("INVALID TRANSITION")
+    state
+  };
+  newState
+};
+
 type effect = unit => option(effectCleanup)
 
-let timerEffect = (state, dispatch: actionDispatch): effect => {
+let commandEffect = (command: command, state: state, dispatch: actionDispatch, dispatchCompleted: dispatchCompleted): effect => {
   () => {
-  switch (state) {
-      | Animating(_) =>
-        let startTimestamp: ref(option(float)) = ref(None)
-        let rafId: ref(option(Webapi.rafId)) = ref(None)
-        let rec rafCallback = (time: float) => {
-          let startTime = startTimestamp^ |> Option.mapWithDefault(_, time, x => x)
-          rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
-          startTimestamp := Some(startTime)
-          let t = (time -. startTime)
-          dispatch(Frame(t))
-        }
-        rafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback))
+  switch (command, state) {
+      | (Start(animationState), Idle(_)) => 
+        dispatch(Start(animationState))
+        None
+      | (command, Animating(animationState)) when command == Stop || animationState.t >= 1.0 =>
+        dispatch(Stop)
+        dispatchCompleted(animationState)
+        None
+      | (_, Animating(_)) =>
+        let rafCallback = (timerMs: float) => { dispatch(Frame(timerMs)) }
+        let rafId = Webapi.requestCancellableAnimationFrame(rafCallback)
         Some(() => {
-          rafId^ |> Option.map(_, Webapi.cancelAnimationFrame) |> ignore
+          Webapi.cancelAnimationFrame(rafId)
           })
-      | Idle => 
+      | (_, _) => 
         None
       }  
   }
@@ -120,7 +163,10 @@ let timerEffect = (state, dispatch: actionDispatch): effect => {
 
 let logTransition = ((state: state, dispatch: event => unit)) => {
   let wrapped: event => unit = (event: event): unit => {
-    Js.log("transition on event" ++ stringOfEvent(event) ++ " to state " ++ stringOfState(stateMachine(state, event)))
+    switch (event) {
+      | Frame(_) => ()
+      | event => Js.log("padding transition on event " ++ stringOfEvent(event) ++ " to state " ++ stringOfState(stateMachine(state, event)))
+    }
     dispatch(event)
   };
   (state, wrapped)
@@ -129,27 +175,15 @@ let logTransition = ((state: state, dispatch: event => unit)) => {
 [@react.component]
 let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {
 
-  // let (state, dispatch) = logTransition(React.useReducer(stateMachine, Idle));
-  let (state, dispatch) = React.useReducer(stateMachine, Idle);
+  let (state, dispatch) = logTransition(React.useReducer(stateMachine, Idle(0.0)));
+  // let (state, dispatch) = React.useReducer(stateMachine, Idle(0.0));
   
-  switch (command, state) {
-    | (Start(animationState), Idle) => dispatch(Start(animationState))
-    | (Stop, Animating(animationState)) | (_, Animating(animationState)) when animationState.t >= 1.0 =>
-      dispatchCompleted(animationState)
-      dispatch(Stop)
-    | (_, _) => ()
+  React.useEffect2(commandEffect(command, state, dispatch, dispatchCompleted), (command, state));
+
+  let state = switch (command, state) {
+    | (Start(newState), Idle(_)) =>  Animating(newState)
+    | (_, _) => state
   };
-
-  React.useEffect2(timerEffect(state, dispatch), (0, state != Idle));
-
-  switch (state) {
-    | Animating(animationState) =>
-      if (animationState.t >= animationState.durationMs) {
-        dispatchCompleted(animationState)
-        dispatch(Stop)
-      }
-    | Idle => ()
-  }
 
   let width = computeWidth(state)
 
