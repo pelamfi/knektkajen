@@ -106,13 +106,16 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
     (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}, None)
   } else {
     if (tInsideItem >= 0.001) {
-      Js.log("FOO " ++ Js.Float.toString(tInsideItem));
-      //if (fromIndexNew > queuedAnimationToIndex) {
+      
+      if (fromIndexNew > queuedAnimationToIndex) {
+        Js.log("FOO " ++ Js.Float.toString(tInsideItem));
         (tInsideItem, {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
-      //} else {
-//        (1.0 -. tInsideItem, {fromIndex: fromIndexNew - 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
-      //}
+      } else {
+        Js.log("BAR " ++ Js.Float.toString(tInsideItem));
+        (tInsideItem, {fromIndex: fromIndexNew - 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
+      }
     } else {
+      Js.log("BAZ " ++ Js.Float.toString(tInsideItem));
       let tSwitched = (tInsideItem *. float_of_int(prevItemStep)) /. float_of_int(nextItemStep);
       (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}, None)
     }
