@@ -187,6 +187,16 @@ let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: strin
 
   let width = computeWidth(state)
 
+  switch (state) {
+    | Animating(a) when a.t < 0.0 =>
+      Js.log("t " ++ Js.Float.toString(a.t))
+    | _ => ()
+  }
+
+  if (width <= 0.0) {
+    Js.log("w " ++ Js.Float.toString(width))
+  }
+
   let widthStyle = paddingWidthStyle(width);
   let style = ReactDOMRe.Style.make(~background="red", ~width = widthStyle, ());
   <div key="infiniteSliderAnimationPadding" id={id} className="infiniteSliderAnimationPadding" style={style} />;

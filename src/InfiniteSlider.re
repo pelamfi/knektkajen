@@ -2,7 +2,8 @@ open ReactUtil;
 open Belt.List;
 open Belt
 open Webapi;
-//open Webapi.Dom.Element;
+
+let slideAnimationDurationMs = 3000.0
 
 type componentFactory = (int, int, string) => reactComponent;
 
@@ -33,8 +34,6 @@ let stringOfAnimation = (a: animation): string => {
     ++ string_of_int(a.toIndex)
     ++ "}"
 }
-
-let slideAnimationDurationMs = 3333.0
 
 let stringOfAnimationState = (state: animationState): string => {
   switch (state) {
@@ -94,15 +93,30 @@ let id_for_string = (config: config, s: string): string => {
 
 //   Js.log("FOOO " ++ string_of_int(prevSpanItems) ++ " " ++ Js.Float.toString(tInsideItem) ++ " "++ string_of_int(nextSpanItems))
 
-let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, queuedAnimationToIndex: int): (float, animation) => {
-  let prevSpanItems = Js.Math.abs_int(prevAnimation.fromIndex - prevAnimation.toIndex);
-  let tPerPrevItems = prevPaddingState.t /. float_of_int(prevSpanItems);
-  let tInsideItem: float = JsUtil.fmod(prevPaddingState.t, float_of_int(prevSpanItems));
+let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, queuedAnimationToIndex: int): (float, animation, option(int)) => {
+  let prevItemStep = prevAnimation.toIndex - prevAnimation.fromIndex;
+  let tPerPrevItems = prevPaddingState.t /. float_of_int(prevItemStep);
+  let tInsideItem: float = JsUtil.fmod(prevPaddingState.t, float_of_int(prevItemStep));
   let currentItemInPrevAnimation = int_of_float(tPerPrevItems);
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
-  let nextSpanItems: int = Js.Math.abs_int(fromIndexNew - queuedAnimationToIndex);
-  let tSwitched = (tInsideItem *. float_of_int(prevSpanItems)) /. float_of_int(nextSpanItems);
-  (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex})
+  let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
+  if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(nextItemStep)) {
+    Js.log("NORMAL  " ++ Js.Float.toString(tInsideItem));
+    let tSwitched = (tInsideItem *. float_of_int(prevItemStep)) /. float_of_int(nextItemStep);
+    (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}, None)
+  } else {
+    if (tInsideItem >= 0.001) {
+      Js.log("FOO " ++ Js.Float.toString(tInsideItem));
+      //if (fromIndexNew > queuedAnimationToIndex) {
+        (tInsideItem, {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
+      //} else {
+//        (1.0 -. tInsideItem, {fromIndex: fromIndexNew - 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
+      //}
+    } else {
+      let tSwitched = (tInsideItem *. float_of_int(prevItemStep)) /. float_of_int(nextItemStep);
+      (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}, None)
+    }
+  }
 }
 
 let animationPaddingState = (prevState: InfiniteSliderPadding.animationState, itemSlotPlacement: option(itemSlotPlacement), animation): InfiniteSliderPadding.animationState => {
@@ -188,10 +202,10 @@ let stateMachine = (state: state, action: event): state => {
   | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
     switch (state.queuedAnimation) {
     | Some(queuedAnimationToIndex) => 
-      let (tSwitched, switchedAnimation) = switchAnimation(prevPaddingAnimationState, prevAnimation, queuedAnimationToIndex);
+      let (tSwitched, switchedAnimation, queuedStill) = switchAnimation(prevPaddingAnimationState, prevAnimation, queuedAnimationToIndex);
       {
         ...state,
-        queuedAnimation: None,
+        queuedAnimation: queuedStill,
         centered: switchedAnimation.fromIndex, 
         animationState: Animating(switchedAnimation),
         paddingCommand: Start({
@@ -235,7 +249,7 @@ let initialState = {selected: 0, centered: 0, queuedAnimation: None, animationSt
 
 let logTransition = ((state: state, dispatch: event => unit)) => {
   let wrapped: event => unit = (event: event): unit => {
-    Js.log("transition on event" ++ stringOfEvent(event) ++ " to state " ++ stringOfState(stateMachine(state, event)))
+    Js.log("transition on event " ++ stringOfEvent(event) ++ " to state " ++ stringOfState(stateMachine(state, event)))
     dispatch(event)
   };
   (state, wrapped)

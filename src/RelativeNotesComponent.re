@@ -25,9 +25,31 @@ let make = () => {
       let note: Note.note = {offset: i};
       dispatch(ClickNote(note))
     },
-    itemsWindow: RangeOfInt.make((-12) * 2, 12 * 2),
+    itemsWindow: RangeOfInt.make((-12) * 1, 12 * 1),
     maxJump: 12,
   };
+
+
+  let (foo, fooSet) = React.useReducer((_, x) => {x}, true);
+ 
+  React.useEffect(() => {
+    if (foo) {
+      fooSet(false);
+      Js.Global.setTimeout(
+        () => {
+          dispatch(ClickNote({offset: 2}))
+        },
+        1000
+      ) |> ignore;
+      Js.Global.setTimeout(
+        () => {
+          dispatch(ClickNote({offset: -2}))
+        },
+        2000
+      ) |> ignore;
+    }
+    None;
+  });
 
   <InfiniteSlider config=sliderConfig selected={state.currentNote.offset} />;
 };
