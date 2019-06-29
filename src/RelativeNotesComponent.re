@@ -30,6 +30,7 @@ let make = () => {
   };
 
 
+
   let (foo, fooSet) = React.useReducer((_, x) => {x}, true);
   React.useEffect(() => {
     if (foo) {
@@ -42,15 +43,9 @@ let make = () => {
       ) |> ignore;
       Js.Global.setTimeout(
         () => {
-          dispatch(ClickNote({offset: 4}))
+          dispatch(ClickNote({offset: 1}))
         },
-        500
-      ) |> ignore;
-      Js.Global.setTimeout(
-        () => {
-          dispatch(ClickNote({offset: -1}))
-        },
-        1000
+        2000
       ) |> ignore;
     }
     None;
