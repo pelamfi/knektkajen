@@ -95,9 +95,8 @@ let id_for_string = (config: config, s: string): string => {
 
 let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, queuedAnimationToIndex: int): (float, animation, option(int)) => {
   let prevItemStep = prevAnimation.toIndex - prevAnimation.fromIndex;
-  let tPerPrevItems = prevPaddingState.t /. float_of_int(prevItemStep);
-  let tInsideItem: float = JsUtil.fmod(prevPaddingState.t, float_of_int(prevItemStep));
-  let currentItemInPrevAnimation = int_of_float(tPerPrevItems);
+  let currentItemInPrevAnimation = int_of_float(prevPaddingState.t *. float_of_int(prevItemStep));
+  let tInsideItem: float = JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep));
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
   if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(nextItemStep)) {
