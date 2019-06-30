@@ -95,15 +95,30 @@ let id_for_string = (config: config, s: string): string => {
 
 let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, prevAnimation: animation, queuedAnimationToIndex: int): (float, animation, option(int)) => {
   let prevItemStep = prevAnimation.toIndex - prevAnimation.fromIndex;
-  let currentItemInPrevAnimation = int_of_float(prevPaddingState.t *. float_of_int(prevItemStep));
-  let tInsideItem: float = JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep));
+  let (currentItemInPrevAnimation, tInsideItem) =
+  if (prevItemStep < 0) {
+    (int_of_float(prevPaddingState.t *. float_of_int(prevItemStep)) - 1
+    , JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)))
+  } else {
+    (int_of_float(prevPaddingState.t *. float_of_int(prevItemStep))
+    , 1.0 -. JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)))
+  }
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
-  if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(nextItemStep)) {
+  Js.log("ASDASD " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: " ++ Js.Float.toString(prevPaddingState.t))
+  Js.log("ASDASD fromIndexNew:" ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep)
+  ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " nextItemStep:" ++ string_of_int(nextItemStep) ++ " queuedAnimationToIndex: " ++ string_of_int(queuedAnimationToIndex))
+  if (prevPaddingState.t >= 1.0) {
+    Js.log("PREV ANIM COMPLETE");
+    (0.0, {fromIndex: prevAnimation.toIndex, toIndex: queuedAnimationToIndex}, None)
+  } else if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(nextItemStep)) {
     let tSwitched = (tInsideItem *. float_of_int(prevItemStep)) /. float_of_int(nextItemStep);
-    Js.log("NORMAL  " ++ Js.Float.toString(tSwitched) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " prev:" ++ string_of_int(prevItemStep) ++ " next:" ++ string_of_int(nextItemStep) );
-    (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}, None)
+    let nextAnimation = {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}
+    Js.log("NORMAL " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
+    (tSwitched, nextAnimation, None)
   } else {
+    // We are changing direction. Insert a "shim" animation to change direction and go back as far 
+    // as current item has not completely been animated
     if (tInsideItem >= 0.001) {
       if (fromIndexNew > queuedAnimationToIndex) {
         if (fromIndexNew == prevAnimation.fromIndex) {
@@ -114,13 +129,10 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
           (tInsideItem, {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
         }
       } else {
-        if (fromIndexNew == prevAnimation.fromIndex) {
-          Js.log("BAR X " ++ Js.Float.toString(tInsideItem));
-          (1.0 -. tInsideItem, {fromIndex: prevAnimation.toIndex, toIndex: prevAnimation.fromIndex}, Some(queuedAnimationToIndex))
-        } else {
-          Js.log("BAR " ++ Js.Float.toString(tInsideItem));
-          (tInsideItem, {fromIndex: fromIndexNew - 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
-        }
+        // was going left, now going right, back right "back" to next element on right
+        let nextAnimation = {fromIndex: fromIndexNew, toIndex: fromIndexNew + 1}
+        Js.log("BAR " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
+        (1.0 -. tInsideItem, nextAnimation, Some(queuedAnimationToIndex))
       }
     } else {
       Js.log("BAZ " ++ Js.Float.toString(tInsideItem));

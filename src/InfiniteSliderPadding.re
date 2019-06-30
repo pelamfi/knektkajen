@@ -128,7 +128,7 @@ let stateMachine = (state, event): state => {
   | (Animating(animationState), Frame(timerMs)) =>
     let updatedTimer = updatedLast(animationState.timer, timerMs)
     let msFromStart = duration(updatedTimer)
-    let newT = Js.Math.max_float(0.0, (msFromStart /. animationState.durationMs) +. animationState.tInitial)
+    let newT = Js.Math.min_float(Js.Math.max_float(0.0, (msFromStart /. animationState.durationMs) +. animationState.tInitial), 1.0)
     Animating({...animationState, t: newT, timer: updatedTimer})
   | (state, _) =>
     Js.log("INVALID TRANSITION")

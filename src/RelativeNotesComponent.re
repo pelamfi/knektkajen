@@ -37,20 +37,19 @@ let make = () => {
       fooSet(false);
       Js.Global.setTimeout(
         () => {
-          dispatch(ClickNote({offset: -2}))
+          dispatch(ClickNote({offset: -2})) // 100ms -2
         },
         100
       ) |> ignore;
       Js.Global.setTimeout(
         () => {
-          dispatch(ClickNote({offset: 1}))
+          dispatch(ClickNote({offset: 1})) // 200ms 1
         },
         2000
       ) |> ignore;
     }
     None;
   });
-
 
   <InfiniteSlider config=sliderConfig selected={state.currentNote.offset} />;
 };
