@@ -97,11 +97,14 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
   let prevItemStep = prevAnimation.toIndex - prevAnimation.fromIndex;
   let (currentItemInPrevAnimation, tInsideItem) =
   if (prevItemStep < 0) {
-    (int_of_float(prevPaddingState.t *. float_of_int(prevItemStep)) - 1
-    , JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)))
+    let prevItemStepAbs = float_of_int(Js.Math.abs_int(prevItemStep));
+    // was going left
+    (int_of_float(prevPaddingState.t *. float_of_int(prevItemStep)) - 1,
+    JsUtil.fmod(prevPaddingState.t, 1.0 /. prevItemStepAbs) *. prevItemStepAbs)
   } else {
-    (int_of_float(prevPaddingState.t *. float_of_int(prevItemStep))
-    , JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)))
+    // was going right
+    (int_of_float(prevPaddingState.t *. float_of_int(prevItemStep)), 
+    JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)) *. float_of_int(prevItemStep))
   }
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
@@ -140,8 +143,9 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
       } else {
         // was going left, now going right, back right "back" to next element on right
         let nextAnimation = {fromIndex: fromIndexNew, toIndex: fromIndexNew + 1}
-        Js.log("BAR " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
-        (1.0 -. tInsideItem, nextAnimation, Some(queuedAnimationToIndex))
+        let tNextAnimation = 1.0 -. tInsideItem
+        Js.log("BAR " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
+        (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex))
       }
     } else {
       Js.log("BAZ " ++ Js.Float.toString(tInsideItem));
