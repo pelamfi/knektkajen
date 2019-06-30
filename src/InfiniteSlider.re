@@ -108,11 +108,11 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
    }
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
-  Js.log("ASDASD " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: " ++ Js.Float.toString(prevPaddingState.t))
-  Js.log("ASDASD fromIndexNew:" ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep)
+  Js.log("switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: " ++ Js.Float.toString(prevPaddingState.t))
+  Js.log("switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep)
   ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " nextItemStep:" ++ string_of_int(nextItemStep) ++ " queuedAnimationToIndex: " ++ string_of_int(queuedAnimationToIndex))
   if (prevPaddingState.t >= 1.0) {
-    Js.log("PREV ANIM COMPLETE");
+    Js.log("PREVIOUS ANIMATION COMPLETE");
     (0.0, {fromIndex: prevAnimation.toIndex, toIndex: queuedAnimationToIndex}, None)
   } else if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(nextItemStep)) {
     if (prevItemStep < 0) {
@@ -131,26 +131,18 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
   } else {
     // We are changing direction. Insert a "shim" animation to change direction and go back as far 
     // as current item has not completely been animated
-    if (tInsideItem >= 0.0) {
-      if (fromIndexNew > queuedAnimationToIndex) {
-        if (fromIndexNew == prevAnimation.fromIndex) {
-          Js.log("FOO X " ++ Js.Float.toString(tInsideItem) ++ " " ++ string_of_int(fromIndexNew));
-          (1.0 -. tInsideItem, {fromIndex: prevAnimation.toIndex, toIndex: prevAnimation.fromIndex}, Some(queuedAnimationToIndex))
-        } else {
-          Js.log("FOO " ++ Js.Float.toString(tInsideItem) ++ " " ++ string_of_int(fromIndexNew));
-          (tInsideItem, {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew}, Some(queuedAnimationToIndex))
-        }
-      } else {
-        // was going left, now going right, back right "back" to next element on right
-        let nextAnimation = {fromIndex: fromIndexNew, toIndex: fromIndexNew + 1}
-        let tNextAnimation = 1.0 -. tInsideItem
-        Js.log("BAR " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
-        (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex))
-      }
+    if (prevAnimation.toIndex > queuedAnimationToIndex) {
+      // was going right, now going left
+      let tNextAnimation = 1.0 -. tInsideItem
+      let nextAnimation = {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew}
+      Js.log("GOING RIGHT TO GOING LEFT " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
+      (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex))
     } else {
-      Js.log("BAZ " ++ Js.Float.toString(tInsideItem));
-      let tSwitched = tInsideItem /. float_of_int(nextItemStep);
-      (tSwitched, {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}, None)
+      // was going left, now going right, back right "back" to next element on right
+      let nextAnimation = {fromIndex: fromIndexNew, toIndex: fromIndexNew + 1}
+      let tNextAnimation = 1.0 -. tInsideItem
+      Js.log("GOING LEFT TO GOING RIGHT " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
+      (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex))
     }
   }
 }
@@ -260,11 +252,7 @@ let stateMachine = (state: state, action: event): state => {
         animationState: Animating(animation),
       }
   | (ChangeSelected(newSelected), Animating(_)) => 
-      let queuedAnimationToIndex = if (state.centered == newSelected) {
-        None
-      } else {
-        Some(newSelected)
-      };
+      let queuedAnimationToIndex = Some(newSelected);
       {
         ...state,
         selected: newSelected,
