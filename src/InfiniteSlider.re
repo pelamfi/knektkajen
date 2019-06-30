@@ -101,7 +101,7 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
     , JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)))
   } else {
     (int_of_float(prevPaddingState.t *. float_of_int(prevItemStep))
-    , 1.0 -. JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)))
+    , JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep)))
   }
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
@@ -112,10 +112,19 @@ let switchAnimation = (prevPaddingState: InfiniteSliderPadding.animationState, p
     Js.log("PREV ANIM COMPLETE");
     (0.0, {fromIndex: prevAnimation.toIndex, toIndex: queuedAnimationToIndex}, None)
   } else if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(nextItemStep)) {
-    let tSwitched = (tInsideItem *. float_of_int(prevItemStep)) /. float_of_int(nextItemStep);
-    let nextAnimation = {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}
-    Js.log("NORMAL " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
-    (tSwitched, nextAnimation, None)
+    if (prevItemStep < 0) {
+      // going left
+      let tSwitched = (tInsideItem *. float_of_int(prevItemStep)) /. float_of_int(nextItemStep - 1);
+      let nextAnimation = {fromIndex: fromIndexNew + 1, toIndex: queuedAnimationToIndex}
+      Js.log("NORMAL LEFT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
+      (tSwitched, nextAnimation, None)
+    } else {
+      // going right. Very simple, just scale the tInsideItem to the next animation
+      let tSwitched = (tInsideItem *. float_of_int(prevItemStep)) /. float_of_int(nextItemStep);
+      let nextAnimation = {fromIndex: fromIndexNew, toIndex: queuedAnimationToIndex}
+      Js.log("NORMAL RIGHT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
+      (tSwitched, nextAnimation, None)
+    }
   } else {
     // We are changing direction. Insert a "shim" animation to change direction and go back as far 
     // as current item has not completely been animated

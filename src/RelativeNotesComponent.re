@@ -30,26 +30,26 @@ let make = () => {
   };
 
 
-
+/*
   let (foo, fooSet) = React.useReducer((_, x) => {x}, true);
   React.useEffect(() => {
     if (foo) {
       fooSet(false);
       Js.Global.setTimeout(
         () => {
-          dispatch(ClickNote({offset: -2})) // 100ms -2
+          dispatch(ClickNote({offset: -1})) // 100ms -2
         },
         100
       ) |> ignore;
       Js.Global.setTimeout(
         () => {
-          dispatch(ClickNote({offset: 1})) // 200ms 1
+          dispatch(ClickNote({offset: -2})) // 200ms 1
         },
-        2000
+        500
       ) |> ignore;
     }
     None;
-  });
+  });*/
 
   <InfiniteSlider config=sliderConfig selected={state.currentNote.offset} />;
 };
