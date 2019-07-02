@@ -3,7 +3,7 @@ open Belt.List;
 open Belt
 open Webapi;
 
-let slideAnimationDurationMs = 3000.0
+let slideAnimationDurationMs = 333.0
 
 type componentFactory = (int, int, string) => reactComponent;
 

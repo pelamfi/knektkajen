@@ -35,7 +35,7 @@ let make = () => {
       let note: Note.note = {offset: i};
       dispatch(ClickNote(note))
     },
-    itemsWindow: RangeOfInt.make((-12) * 1, 12 * 1),
+    itemsWindow: RangeOfInt.make((-12) * 2, 12 * 2),
     maxJump: 12,
   };
 
