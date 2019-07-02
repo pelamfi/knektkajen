@@ -29,6 +29,7 @@ let make = () => {
     maxJump: 12,
   };
 
+/*
   let (foo, fooSet) = React.useReducer((_, x) => {x}, true);
   React.useEffect(() => {
     if (foo) {
@@ -54,6 +55,18 @@ let make = () => {
     }
     None;
   });
+  */
 
-  <InfiniteSlider config=sliderConfig selected={state.currentNote.offset} />;
+  React.useEffect0(() => {
+    let document = Webapi.Dom.Document.asEventTarget(Webapi.Dom.document);
+    let listener = (event: Dom.keyboardEvent): unit => {let key = Webapi.Dom.KeyboardEvent.key(event);Js.log(key)};
+    Webapi.Dom.EventTarget.addKeyDownEventListener(listener, document);
+    Some(() => {
+      Webapi.Dom.EventTarget.removeKeyDownEventListener(listener, document);
+    })
+  });
+
+  <InfiniteSlider config=sliderConfig selected={state.currentNote.offset}/>
+  
+  
 };
