@@ -130,6 +130,8 @@ let range_of_int = (base: note, start: int, rangeEnd: int): list(note) => {
 // TODO: Interval should probably be sum type of 12 items
 type interval = {steps: int};
 
+let inverse = (i: interval): interval => {steps: i.steps * -1}
+
 let chromaticIntervals = Array.init(12, i => {steps: i}) |> Array.to_list;
 
 let scaleIntervals = (s: scaleClass): list(interval) => {
