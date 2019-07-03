@@ -27,7 +27,8 @@
     "reason-react": "^0.7.0",
     "sass-loader": "^7.1.0",
     "style-loader": "^0.23.1",
-    "tar": ">=4.4.10"
+    "tar": ">=4.4.10",
+    "tone": "^13.4.9"
   },
   "devDependencies": {
     "bs-platform": "5.0.4",
