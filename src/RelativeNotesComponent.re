@@ -2,6 +2,31 @@ open RelativeNotesState;
 open ReactUtil;
 open Belt;
 
+
+type synth;
+
+// [@bs.val] [@bs.module "tone"]
+
+let makeSynth: (unit) => synth = [%bs.raw
+  {|
+function () {
+  const Tone = require('tone')
+  const s = new Tone.Synth().toMaster();
+  return s
+}
+|}
+];
+
+let s: synth = makeSynth();
+
+let play: (synth, float) => unit = [%bs.raw
+  {|
+function (synth, frequency) {
+  synth.triggerAttackRelease(frequency, '8n')
+}
+|}
+];
+
 type intervalKeyBinding = {
   keyCode: string,
   interval: Note.interval
@@ -73,6 +98,7 @@ let make = () => {
       let code = Webapi.Dom.KeyboardEvent.code(event);
       let shift: bool = Webapi.Dom.KeyboardEvent.shiftKey(event);
       let interval: option(Note.interval) = List.getBy(intervalKeyBindings, keyBinding => {keyBinding.keyCode == code}) |> Option.map(_, binding => {binding.interval});
+      play(s, 440.0)
       switch(interval) {
         | Some(interval) when !shift =>
         dispatch(ClickInterval(interval));
