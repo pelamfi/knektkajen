@@ -213,8 +213,8 @@ let logTransition = ((state: state, dispatch: event => unit)) => {
 let make =
     (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {
   let (state, dispatch) =
-    logTransition(React.useReducer(stateMachine, Idle(0.0)));
-  // let (state, dispatch) = React.useReducer(stateMachine, Idle(0.0));
+    React.useReducer(stateMachine, Idle(0.0));
+    //logTransition(React.useReducer(stateMachine, Idle(0.0)));
 
   React.useEffect2(
     commandEffect(command, state, dispatch, dispatchCompleted),
@@ -232,10 +232,6 @@ let make =
   switch (state) {
   | Animating(a) when a.t < 0.0 => Js.log("t " ++ Js.Float.toString(a.t))
   | _ => ()
-  };
-
-  if (width <= 0.0) {
-    Js.log("w " ++ Js.Float.toString(width));
   };
 
   let widthStyle = paddingWidthStyle(width);

@@ -96,8 +96,6 @@ let id_for_string = (config: config, s: string): string => {
   "inf-slider-" ++ config.componentBaseName ++ "-" ++ s;
 };
 
-//   Js.log("FOOO " ++ string_of_int(prevSpanItems) ++ " " ++ Js.Float.toString(tInsideItem) ++ " "++ string_of_int(nextSpanItems))
-
 let switchAnimation =
     (
       prevPaddingState: InfiniteSliderPadding.animationState,
@@ -125,28 +123,10 @@ let switchAnimation =
     };
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
   let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
-  Js.log(
-    "switchAnimation prevAnimation: "
-    ++ stringOfAnimation(prevAnimation)
-    ++ " prevPaddingState.t: "
-    ++ Js.Float.toString(prevPaddingState.t),
-  );
-  Js.log(
-    "switchAnimation fromIndexNew: "
-    ++ string_of_int(fromIndexNew)
-    ++ " currentItemInPrevAnimation:"
-    ++ string_of_int(currentItemInPrevAnimation)
-    ++ " prevItemStep: "
-    ++ string_of_int(prevItemStep)
-    ++ " tInsideItem:"
-    ++ Js.Float.toString(tInsideItem)
-    ++ " nextItemStep:"
-    ++ string_of_int(nextItemStep)
-    ++ " queuedAnimationToIndex: "
-    ++ string_of_int(queuedAnimationToIndex),
-  );
+  // Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
+  // Js.log( "switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " nextItemStep:" ++ string_of_int(nextItemStep) ++ " queuedAnimationToIndex: "++ string_of_int(queuedAnimationToIndex));
   if (prevPaddingState.t >= 1.0) {
-    Js.log("PREVIOUS ANIMATION COMPLETE");
+    // Js.log("PREVIOUS ANIMATION COMPLETE");
     (
       0.0,
       {fromIndex: prevAnimation.toIndex, toIndex: queuedAnimationToIndex},
@@ -160,12 +140,7 @@ let switchAnimation =
         fromIndex: fromIndexNew + 1,
         toIndex: queuedAnimationToIndex,
       };
-      Js.log(
-        "NORMAL LEFT "
-        ++ Js.Float.toString(tSwitched)
-        ++ " nextAnimation: "
-        ++ stringOfAnimation(nextAnimation),
-      );
+      // Js.log( "NORMAL LEFT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
       (tSwitched, nextAnimation, None);
     } else {
       // going right. Very simple, just scale the tInsideItem to the next animation
@@ -174,12 +149,7 @@ let switchAnimation =
         fromIndex: fromIndexNew,
         toIndex: queuedAnimationToIndex,
       };
-      Js.log(
-        "NORMAL RIGHT "
-        ++ Js.Float.toString(tSwitched)
-        ++ " nextAnimation: "
-        ++ stringOfAnimation(nextAnimation),
-      );
+      // Js.log( "NORMAL RIGHT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
       (tSwitched, nextAnimation, None);
     };
   } else if
@@ -189,27 +159,13 @@ let switchAnimation =
     // was going right, now going left
     let tNextAnimation = 1.0 -. tInsideItem;
     let nextAnimation = {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew};
-    Js.log(
-      "GOING RIGHT TO GOING LEFT "
-      ++ Js.Float.toString(tInsideItem)
-      ++ " nextAnimation: "
-      ++ stringOfAnimation(nextAnimation)
-      ++ " tNextAnimation:"
-      ++ Js.Float.toString(tNextAnimation),
-    );
+    // Js.log( "GOING RIGHT TO GOING LEFT " n++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
     (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex));
   } else {
     // was going left, now going right, back right "back" to next element on right
     let nextAnimation = {fromIndex: fromIndexNew, toIndex: fromIndexNew + 1};
     let tNextAnimation = 1.0 -. tInsideItem;
-    Js.log(
-      "GOING LEFT TO GOING RIGHT "
-      ++ Js.Float.toString(tInsideItem)
-      ++ " nextAnimation: "
-      ++ stringOfAnimation(nextAnimation)
-      ++ " tNextAnimation:"
-      ++ Js.Float.toString(tNextAnimation),
-    );
+    // Js.log("GOING LEFT TO GOING RIGHT " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:"w ++ Js.Float.toString(tNextAnimation));
     (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex));
   };
 };
@@ -330,21 +286,7 @@ let handleClick =
 
       let newSelected = state.selected + int_of_float(slot);
       config.itemSelectedDispatch(newSelected);
-
-      Js.logMany(
-        toArray([
-          "handleClick item width:",
-          Js.Float.toString(placement.width),
-          "clickX",
-          Js.Float.toString(clickX),
-          "slot",
-          Js.Float.toString(slot),
-          "newSelected",
-          string_of_int(newSelected),
-          "state.selected",
-          string_of_int(state.selected),
-        ]),
-      );
+      // Js.logMany(toArray([ "handleClick item width:", Js.Float.toString(placement.width), "clickX", Js.Float.toString(clickX), "slot", Js.Float.toString(slot), "newSelected", string_of_int(newSelected), "state.selected", string_of_int(state.selected),]),);
     },
   )
   |> ignore;
@@ -446,7 +388,8 @@ let make = (~config: config, ~selected: int) => {
   let rowClassName = config.styleBaseName ++ "Row";
 
   let (state, dispatch) =
-    logTransition(React.useReducer(stateMachine, initialState));
+    React.useReducer(stateMachine, initialState);
+    //logTransition(React.useReducer(stateMachine, initialState));
 
   React.useEffect2(
     () => {
@@ -468,15 +411,10 @@ let make = (~config: config, ~selected: int) => {
     ((), state.animationState),
   );
 
-  //ReactSwipeable.swipeTest();
-  //ReactSwipeable.useSwipeableInternal("foo");
-
   let e: list(reactComponent) =
     elems(state, config, paddingAnimationState =>
       dispatch(AnimationComplete(paddingAnimationState))
     );
-
-  // let jsonStringify: ('a) => string = [%bs.raw {|function(x){return JSON.stringify(x)}|}];
 
   <div
     className="infiniteSlider"

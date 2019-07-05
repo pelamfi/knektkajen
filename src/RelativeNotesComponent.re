@@ -82,34 +82,6 @@ let make = () => {
     maxJump: 12,
   };
 
-  /*
-   let (foo, fooSet) = React.useReducer((_, x) => {x}, true);
-   React.useEffect(() => {
-     if (foo) {
-       fooSet(false);
-       Js.Global.setTimeout(
-         () => {
-           dispatch(ClickNote({offset: 1}))
-         },
-         100
-       ) |> ignore;
-       Js.Global.setTimeout(
-         () => {
-           dispatch(ClickNote({offset: 2}))
-         },
-         300
-       ) |> ignore;
-       Js.Global.setTimeout(
-         () => {
-           dispatch(ClickNote({offset: 0}))
-         },
-         600
-       ) |> ignore;
-     }
-     None;
-   });
-   */
-
   let (currentNote, setCurrentNote) =
     React.useReducer((_, x) => x, initialState.currentNote);
   React.useEffect0(() => {
