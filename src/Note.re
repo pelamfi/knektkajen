@@ -144,11 +144,11 @@ let scaleIntervals = (s: scaleClass): list(interval) => {
 
 let middleC: note = {offset: 0};
 
-let apply = (n: note, i: interval): note => {offset: n.offset + i.steps};
+let noteApplyInterval = (n: note, i: interval): note => {offset: n.offset + i.steps};
 
 let scale = (rootNote: note, s: scaleClass): list(note) => {
   let intervals = scaleIntervals(s);
-  Belt.List.map(intervals, interval => apply(rootNote, interval));
+  Belt.List.map(intervals, interval => noteApplyInterval(rootNote, interval));
 };
 
 let asNoteNameClass = (n: sharpOrFlat): noteNameClass => {
@@ -196,13 +196,13 @@ let asNoteName = (n: chromaticNote, c: noteNameClass): noteName => {
 };
 
 // If you know a note and a scale, you know what that note is called
-let name = (n: note, scale: scaleName): noteName => {
+let noteNameForScaleName = (n: note, scale: scaleName): noteName => {
   let chromaticNote = asChromaticNote(n);
   let noteClass = asNoteNameClass(scale.noteName);
   asNoteName(chromaticNote, noteClass);
 };
 
-let asString = (n: noteName): string => {
+let stringOfNoteName = (n: noteName): string => {
   switch (n) {
   | C => "C"
   | CSharpDFlat(Sharp) => {js|C♯|js}
@@ -223,6 +223,10 @@ let asString = (n: noteName): string => {
   | B => "B"
   };
 };
+
+let nameOfNoteInCMajor = (note: note): string => {
+  stringOfNoteName(noteNameForScaleName(note, cMajorName))  
+}
 
 let frequency = (n: note): float => {
   // middle C is the 0, so shift by 9 half tones to A which is the nice round 440 hz

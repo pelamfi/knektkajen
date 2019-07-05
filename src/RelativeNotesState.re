@@ -35,7 +35,7 @@ let updateState = (state: state, event: event): state => {
     emit(state, CurrentNoteChanged(newState.currentNote))
     newState
   | ClickInterval(interval) => 
-    let newState = {...state, currentNote: apply(state.currentNote, interval)}
+    let newState = {...state, currentNote: noteApplyInterval(state.currentNote, interval)}
     emit(state, CurrentNoteChanged(newState.currentNote))
     newState
   | RegisterListener(listener) => {...state, listeners: [listener, ...state.listeners]}
