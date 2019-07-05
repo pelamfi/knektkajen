@@ -83,7 +83,7 @@ let cMajorName: scaleName = {noteName: C, scaleClass: Major};
 
 let moduloOffset = (n: note): int =>
   if (n.offset < 0) {
-    11 - (-n.offset - 1) mod 12;
+    11 - (- n.offset - 1) mod 12;
   } else {
     n.offset mod 12;
   };
@@ -124,13 +124,14 @@ let chromaticNoteNames: list(noteName) = [
 ];
 
 let range_of_int = (base: note, start: int, rangeEnd: int): list(note) => {
-  RangeOfInt.make(start, rangeEnd) |> RangeOfInt.map(_, x => {offset: base.offset + x});
+  RangeOfInt.make(start, rangeEnd)
+  |> RangeOfInt.map(_, x => {offset: base.offset + x});
 };
 
 // TODO: Interval should probably be sum type of 12 items
 type interval = {steps: int};
 
-let inverse = (i: interval): interval => {steps: i.steps * -1}
+let inverse = (i: interval): interval => {steps: i.steps * (-1)};
 
 let chromaticIntervals = Array.init(12, i => {steps: i}) |> Array.to_list;
 
@@ -144,7 +145,9 @@ let scaleIntervals = (s: scaleClass): list(interval) => {
 
 let middleC: note = {offset: 0};
 
-let noteApplyInterval = (n: note, i: interval): note => {offset: n.offset + i.steps};
+let noteApplyInterval = (n: note, i: interval): note => {
+  offset: n.offset + i.steps,
+};
 
 let scale = (rootNote: note, s: scaleClass): list(note) => {
   let intervals = scaleIntervals(s);
@@ -207,7 +210,7 @@ let stringOfNoteName = (n: noteName): string => {
   | C => "C"
   | CSharpDFlat(Sharp) => {js|C♯|js}
   | CSharpDFlat(Flat) => {js|D♭|js}
-  |   D => "D"
+  | D => "D"
   | DSharpEFlat(Sharp) => {js|D♯|js}
   | DSharpEFlat(Flat) => {js|E♭|js}
   | E => "E"
@@ -225,10 +228,10 @@ let stringOfNoteName = (n: noteName): string => {
 };
 
 let nameOfNoteInCMajor = (note: note): string => {
-  stringOfNoteName(noteNameForScaleName(note, cMajorName))  
-}
+  stringOfNoteName(noteNameForScaleName(note, cMajorName));
+};
 
 let frequency = (n: note): float => {
   // middle C is the 0, so shift by 9 half tones to A which is the nice round 440 hz
-  Js.Math.pow_float(~base = 2.0, ~exp = float(n.offset - 9) /. 12.0) *. 440.0;
+  Js.Math.pow_float(~base=2.0, ~exp=float(n.offset - 9) /. 12.0) *. 440.0;
 };

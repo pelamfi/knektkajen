@@ -12,17 +12,17 @@ let map = (r: range_of_int, f: int => 'a): list('a) => {
 };
 
 let size = (r: range_of_int) => {
-  let Range(left, right) = r
-  right - left
-}
+  let Range(left, right) = r;
+  right - left;
+};
 
 let drop = (r: range_of_int, count: int): range_of_int => {
   let Range(left, right) = r;
   if (size(r) > count) {
-    Range(left + count, right)
+    Range(left + count, right);
   } else {
-    Range(left, right)
-  }
-}
+    Range(left, right);
+  };
+};
 
 let make = (left: int, right: int): range_of_int => Range(left, right) /* let example: list(int) = Range(1, 10) |> map(_, i => i * 10*/;

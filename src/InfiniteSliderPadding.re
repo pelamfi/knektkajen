@@ -1,6 +1,9 @@
-open Belt
+open Belt;
 
-type timerMs = { start: float, last: float }
+type timerMs = {
+  start: float,
+  last: float,
+};
 
 type animationState = {
   tInitial: float,
@@ -16,7 +19,7 @@ type command =
   | Nop
   | Stop;
 
-type dispatchCompleted = (animationState) => unit;
+type dispatchCompleted = animationState => unit;
 
 type state =
   | Idle(float)
@@ -28,7 +31,7 @@ type event =
   | Frame(float);
 
 type effectCleanup = unit => unit;
-type actionDispatch = (event) => unit;
+type actionDispatch = event => unit;
 
 let initialState: animationState = {
   tInitial: 0.0,
@@ -37,16 +40,22 @@ let initialState: animationState = {
   timer: None,
   startWidth: 0.0,
   endWidth: 1.0,
-}
+};
 
 let stringOfTimer = (timer: option(timerMs)): string => {
-  Option.mapWithDefault(timer, "-", timer => {"(" ++ Js.Float.toString(timer.start) ++ " - " ++ Js.Float.toString(timer.last) ++ " ms)"})
-}
+  Option.mapWithDefault(timer, "-", timer =>
+    "("
+    ++ Js.Float.toString(timer.start)
+    ++ " - "
+    ++ Js.Float.toString(timer.last)
+    ++ " ms)"
+  );
+};
 
 let stringOfAnimationState = (state: animationState): string => {
   "{tInitial:"
   ++ Js.Float.toString(state.tInitial)
-  ++ ", t:" 
+  ++ ", t:"
   ++ Js.Float.toString(state.t)
   ++ ", durationMs:"
   ++ Js.Float.toString(state.durationMs)
@@ -56,148 +65,185 @@ let stringOfAnimationState = (state: animationState): string => {
   ++ Js.Float.toString(state.startWidth)
   ++ ", endWidth:"
   ++ Js.Float.toString(state.endWidth)
-  ++ "}"  
-}
+  ++ "}";
+};
 
 let stringOfEvent = (event: event): string => {
   switch (event) {
-  | Stop  => "Stop"
-  | Start(animationState)  => "Start("++ stringOfAnimationState(animationState)++ ")"
-  | Frame(t) => "Frame("++Js.Float.toString(t)++")"
+  | Stop => "Stop"
+  | Start(animationState) =>
+    "Start(" ++ stringOfAnimationState(animationState) ++ ")"
+  | Frame(t) => "Frame(" ++ Js.Float.toString(t) ++ ")"
   };
 };
 
 let stringOfState = (state: state): string => {
-  switch(state) {
-    | Idle(width) => "Idle("++ Js.Float.toString(width)++ ")"
-    | Animating(animationState) => "Animating(" ++ stringOfAnimationState(animationState) ++ ")"
-  }
-}
+  switch (state) {
+  | Idle(width) => "Idle(" ++ Js.Float.toString(width) ++ ")"
+  | Animating(animationState) =>
+    "Animating(" ++ stringOfAnimationState(animationState) ++ ")"
+  };
+};
 
 let stringOfCommand = (command): string => {
   switch (command) {
   | Nop => "Nop"
   | Stop => "Stop"
-  | Start(animationState) => "Start(" ++ stringOfAnimationState(animationState) ++ ")"
-  }
+  | Start(animationState) =>
+    "Start(" ++ stringOfAnimationState(animationState) ++ ")"
+  };
 };
 
 let paddingWidthStyle = (dist: float): string => {
-  string_of_int(int_of_float(dist)) ++ "px"
-} 
+  string_of_int(int_of_float(dist)) ++ "px";
+};
 
 let computeWidth = (state: state): float => {
-switch (state) {
-    | Idle(width) => width
-    | Animating(animationState) =>
-      if (animationState.endWidth < animationState.startWidth) {
-        (animationState.startWidth -. animationState.endWidth) *. (1.0 -. animationState.t)
-      } else {
-        (animationState.endWidth -. animationState.startWidth) *. animationState.t
-      }
-  }  
+  switch (state) {
+  | Idle(width) => width
+  | Animating(animationState) =>
+    if (animationState.endWidth < animationState.startWidth) {
+      (animationState.startWidth -. animationState.endWidth)
+      *. (1.0 -. animationState.t);
+    } else {
+      (animationState.endWidth -. animationState.startWidth)
+      *. animationState.t;
+    }
+  };
 };
 
 let duration = (timer: option(timerMs)): float => {
   switch (timer) {
-    | Some(timer) => timer.last -. timer.start
-    | None => 0.0
-  }
-}
+  | Some(timer) => timer.last -. timer.start
+  | None => 0.0
+  };
+};
 
 let updatedLast = (timer: option(timerMs), newLast: float): option(timerMs) => {
   switch (timer) {
-    | Some(timer) => Some({start: timer.start, last: Js.Math.max_float(timer.start, newLast)})
-    | None => Some({start: newLast, last: newLast})
-  }
-}
+  | Some(timer) =>
+    Some({start: timer.start, last: Js.Math.max_float(timer.start, newLast)})
+  | None => Some({start: newLast, last: newLast})
+  };
+};
 
 let restart = (timer: option(timerMs)): option(timerMs) => {
   switch (timer) {
-    | Some(timer) => Some({start: timer.last, last: timer.last})
-    | None => None
-  }
-}
-
-let stateMachine = (state, event): state => {
-  let newState = switch (state, event) {
-  | (Animating(_), Stop) => 
-    Idle(computeWidth(state))
-  | (Idle(_), Start(animationState)) =>
-    Animating(animationState)
-  | (Animating(animationState), Frame(timerMs)) =>
-    let updatedTimer = updatedLast(animationState.timer, timerMs)
-    let msFromStart = duration(updatedTimer)
-    let newT = Js.Math.min_float(Js.Math.max_float(0.0, (msFromStart /. animationState.durationMs) +. animationState.tInitial), 1.0)
-    Animating({...animationState, t: newT, timer: updatedTimer})
-  | (state, _) =>
-    Js.log("INVALID TRANSITION")
-    state
+  | Some(timer) => Some({start: timer.last, last: timer.last})
+  | None => None
   };
-  newState
 };
 
-type effect = unit => option(effectCleanup)
+let stateMachine = (state, event): state => {
+  let newState =
+    switch (state, event) {
+    | (Animating(_), Stop) => Idle(computeWidth(state))
+    | (Idle(_), Start(animationState)) => Animating(animationState)
+    | (Animating(animationState), Frame(timerMs)) =>
+      let updatedTimer = updatedLast(animationState.timer, timerMs);
+      let msFromStart = duration(updatedTimer);
+      let newT =
+        Js.Math.min_float(
+          Js.Math.max_float(
+            0.0,
+            msFromStart /. animationState.durationMs +. animationState.tInitial,
+          ),
+          1.0,
+        );
+      Animating({...animationState, t: newT, timer: updatedTimer});
+    | (state, _) =>
+      Js.log("INVALID TRANSITION");
+      state;
+    };
+  newState;
+};
 
-let commandEffect = (command: command, state: state, dispatch: actionDispatch, dispatchCompleted: dispatchCompleted): effect => {
+type effect = unit => option(effectCleanup);
+
+let commandEffect =
+    (
+      command: command,
+      state: state,
+      dispatch: actionDispatch,
+      dispatchCompleted: dispatchCompleted,
+    )
+    : effect => {
   () => {
-  switch (command, state) {
-      | (Start(animationState), Idle(_)) => 
-        dispatch(Start(animationState))
-        None
-      | (command, Animating(animationState)) when command == Stop || animationState.t >= 1.0 =>
-        dispatch(Stop)
-        dispatchCompleted(animationState)
-        None
-      | (_, Animating(_)) =>
-        let rafCallback = (timerMs: float) => { dispatch(Frame(timerMs)) }
-        let rafId = Webapi.requestCancellableAnimationFrame(rafCallback)
-        Some(() => {
-          Webapi.cancelAnimationFrame(rafId)
-          })
-      | (_, _) => 
-        None
-      }  
-  }
+    switch (command, state) {
+    | (Start(animationState), Idle(_)) =>
+      dispatch(Start(animationState));
+      None;
+    | (command, Animating(animationState))
+        when command == Stop || animationState.t >= 1.0 =>
+      dispatch(Stop);
+      dispatchCompleted(animationState);
+      None;
+    | (_, Animating(_)) =>
+      let rafCallback = (timerMs: float) => {
+        dispatch(Frame(timerMs));
+      };
+      let rafId = Webapi.requestCancellableAnimationFrame(rafCallback);
+      Some(() => Webapi.cancelAnimationFrame(rafId));
+    | (_, _) => None
+    };
+  };
 };
 
 let logTransition = ((state: state, dispatch: event => unit)) => {
-  let wrapped: event => unit = (event: event): unit => {
-    switch (event) {
-      | Frame(_) => ()
-      | event => Js.log("padding transition on event " ++ stringOfEvent(event) ++ " to state " ++ stringOfState(stateMachine(state, event)))
-    }
-    dispatch(event)
-  };
-  (state, wrapped)
+  let wrapped: event => unit =
+    (event: event) => (
+      {
+        switch (event) {
+        | Frame(_) => ()
+        | event =>
+          Js.log(
+            "padding transition on event "
+            ++ stringOfEvent(event)
+            ++ " to state "
+            ++ stringOfState(stateMachine(state, event)),
+          )
+        };
+        dispatch(event);
+      }: unit
+    );
+  (state, wrapped);
 };
 
 [@react.component]
-let make = (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {
-
-  let (state, dispatch) = logTransition(React.useReducer(stateMachine, Idle(0.0)));
+let make =
+    (~command: command, ~dispatchCompleted: dispatchCompleted, ~id: string) => {
+  let (state, dispatch) =
+    logTransition(React.useReducer(stateMachine, Idle(0.0)));
   // let (state, dispatch) = React.useReducer(stateMachine, Idle(0.0));
-  
-  React.useEffect2(commandEffect(command, state, dispatch, dispatchCompleted), (command, state));
 
-  let state = switch (command, state) {
-    | (Start(newState), Idle(_)) =>  Animating(newState)
+  React.useEffect2(
+    commandEffect(command, state, dispatch, dispatchCompleted),
+    (command, state),
+  );
+
+  let state =
+    switch (command, state) {
+    | (Start(newState), Idle(_)) => Animating(newState)
     | (_, _) => state
-  };
+    };
 
-  let width = computeWidth(state)
+  let width = computeWidth(state);
 
   switch (state) {
-    | Animating(a) when a.t < 0.0 =>
-      Js.log("t " ++ Js.Float.toString(a.t))
-    | _ => ()
-  }
+  | Animating(a) when a.t < 0.0 => Js.log("t " ++ Js.Float.toString(a.t))
+  | _ => ()
+  };
 
   if (width <= 0.0) {
-    Js.log("w " ++ Js.Float.toString(width))
-  }
+    Js.log("w " ++ Js.Float.toString(width));
+  };
 
   let widthStyle = paddingWidthStyle(width);
-  let style = ReactDOMRe.Style.make(~background="red", ~width = widthStyle, ());
-  <div key="infiniteSliderAnimationPadding" id={id} className="infiniteSliderAnimationPadding" style={style} />;
+  let style = ReactDOMRe.Style.make(~background="red", ~width=widthStyle, ());
+  <div
+    key="infiniteSliderAnimationPadding"
+    id
+    className="infiniteSliderAnimationPadding"
+    style
+  />;
 };
