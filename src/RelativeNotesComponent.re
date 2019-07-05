@@ -5,8 +5,6 @@ open Belt;
 
 type synth;
 
-// [@bs.val] [@bs.module "tone"]
-
 let makeSynth: (unit) => synth = [%bs.raw
   {|
 function () {
@@ -16,8 +14,6 @@ function () {
 }
 |}
 ];
-
-let s: synth = makeSynth();
 
 let play: (synth, float) => unit = [%bs.raw
   {|
@@ -36,10 +32,9 @@ let intervalKeyBindings: list(intervalKeyBinding) = [
   "KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO", "KeyP", "BracketLeft", "BracketRight", "Backslash"] 
     |> List.mapWithIndex(_, (index: int, keyCode: string): intervalKeyBinding => {{keyCode: keyCode, interval: {steps: index}}});
 
+
 [@react.component]
 let make = () => {
-  let (state, dispatch) = React.useReducer(updateState, initialState);
-
   let componentFactory = (i: int, current: int, id: string): reactComponent => {
     let current = current == i;
     let note: Note.note = {offset: i};
@@ -92,13 +87,36 @@ let make = () => {
   });
   */
 
+  let (currentNote, setCurrentNote) = React.useReducer((_, x) => x, initialState.currentNote);
+  React.useEffect0(() => {
+    let synthRef: ref(option(synth)) = ref(None)
+    let listener = (stateChange): unit => {
+      switch(stateChange) {
+        | CurrentNoteChanged(currentNote) => 
+        setCurrentNote(currentNote);
+        switch (synthRef^) {
+          | None =>
+          // Webaudio can be initialized only after user input
+          let synth = makeSynth()
+          synthRef := Some(synth)
+          play(synth, Note.frequency(currentNote))
+          | Some(synth) =>
+          play(synth, Note.frequency(currentNote))
+        }
+      }
+    };
+    dispatch(RegisterListener(listener))
+    Some(() => {
+      dispatch(UnregisterListener(listener))
+    })
+  });
+
   React.useEffect0(() => {
     let document = Webapi.Dom.Document.asEventTarget(Webapi.Dom.document);
     let listener = (event: Dom.keyboardEvent): unit => {
       let code = Webapi.Dom.KeyboardEvent.code(event);
       let shift: bool = Webapi.Dom.KeyboardEvent.shiftKey(event);
       let interval: option(Note.interval) = List.getBy(intervalKeyBindings, keyBinding => {keyBinding.keyCode == code}) |> Option.map(_, binding => {binding.interval});
-      play(s, 440.0)
       switch(interval) {
         | Some(interval) when !shift =>
         dispatch(ClickInterval(interval));
@@ -113,7 +131,5 @@ let make = () => {
     })
   });
 
-  <InfiniteSlider config=sliderConfig selected={state.currentNote.offset}/>
-  
-  
+  <InfiniteSlider config=sliderConfig selected={currentNote.offset}/>
 };
