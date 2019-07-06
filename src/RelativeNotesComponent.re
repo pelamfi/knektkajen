@@ -2,15 +2,18 @@ open RelativeNotesState;
 open ReactUtil;
 open Synth;
 
-let noteChangeListenerEffect = (dispatch: RelativeNotesState.acceptEvent, setCurrentNote: ((Note.note) => unit), _): option(unit => unit) => {
-    let listener = (stateChange): unit => {
+let noteStateListenerEffect = (listener: (stateChange) => unit, dispatch: RelativeNotesState.acceptEvent, _): option(unit => unit) => {
+    dispatch(RegisterListener(listener));
+    Some(() => dispatch(UnregisterListener(listener)));
+};
+
+let noteChangeListenerEffect = (setCurrentNote: ((Note.note) => unit)): ((RelativeNotesState.acceptEvent) => (unit => option(unit => unit))) => {
+  noteStateListenerEffect(stateChange => {
       switch (stateChange) {
       | CurrentNoteChanged(currentNote) => setCurrentNote(currentNote);
       };
-    };
-    dispatch(RegisterListener(listener));
-    Some(() => dispatch(UnregisterListener(listener)));
-  };
+  })
+};
 
 let synthEffect = (dispatch: RelativeNotesState.acceptEvent, _): option(unit => unit) => {
     let synthRef: ref(option(synth)) = ref(None);
@@ -60,9 +63,9 @@ let make = () => {
 
   let (currentNote, setCurrentNote) = React.useReducer((_, x) => x, initialState.currentNote);
     
-  React.useEffect0(noteChangeListenerEffect(dispatch, setCurrentNote));
+  React.useEffect0(noteChangeListenerEffect(setCurrentNote, dispatch));
 
-  React.useEffect0(synthEffect(dispatch9));
+  React.useEffect0(synthEffect(dispatch));
 
   React.useEffect0(Keyboard.listenerEffect(dispatch));
 
