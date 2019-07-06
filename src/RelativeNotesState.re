@@ -58,3 +58,9 @@ let stateRef: ref(state) = ref(initialState);
 let dispatch = (event: event): unit => {
   stateRef := updateState(stateRef^, event);
 };
+
+// To help wrapping in react effects
+let listenerEffect = (listener: (stateChange) => unit, dispatch: acceptEvent, _): option(unit => unit) => {
+    dispatch(RegisterListener(listener));
+    Some(() => dispatch(UnregisterListener(listener)));
+};
