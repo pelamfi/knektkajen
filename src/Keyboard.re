@@ -34,7 +34,7 @@ let intervalKeyBindings: list(intervalKeyBinding) =
        )
      );
 
-let listenerEffect = (dispatch: RelativeNotesState.acceptEvent, unit): option(unit => unit) => {
+let listenerEffect = (dispatch: RelativeNotesState.acceptEvent, _): option(unit => unit) => {
     let document = Webapi.Dom.Document.asEventTarget(Webapi.Dom.document);
     let listener = (event: Dom.keyboardEvent): unit => {
       let code = Webapi.Dom.KeyboardEvent.code(event);
