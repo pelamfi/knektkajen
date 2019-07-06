@@ -3,11 +3,20 @@ open ReactUtil;
 open Synth;
 
 let noteChangeListenerEffect = (dispatch: RelativeNotesState.acceptEvent, setCurrentNote: ((Note.note) => unit), _): option(unit => unit) => {
+    let listener = (stateChange): unit => {
+      switch (stateChange) {
+      | CurrentNoteChanged(currentNote) => setCurrentNote(currentNote);
+      };
+    };
+    dispatch(RegisterListener(listener));
+    Some(() => dispatch(UnregisterListener(listener)));
+  };
+
+let synthEffect = (dispatch: RelativeNotesState.acceptEvent, _): option(unit => unit) => {
     let synthRef: ref(option(synth)) = ref(None);
     let listener = (stateChange): unit => {
       switch (stateChange) {
       | CurrentNoteChanged(currentNote) =>
-        setCurrentNote(currentNote);
         switch (synthRef^) {
         | None =>
           // Webaudio can be initialized only after user input
@@ -52,6 +61,8 @@ let make = () => {
   let (currentNote, setCurrentNote) = React.useReducer((_, x) => x, initialState.currentNote);
     
   React.useEffect0(noteChangeListenerEffect(dispatch, setCurrentNote));
+
+  React.useEffect0(synthEffect(dispatch9));
 
   React.useEffect0(Keyboard.listenerEffect(dispatch));
 
