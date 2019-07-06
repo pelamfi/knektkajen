@@ -1,6 +1,6 @@
 
 type synth;
-    
+
 let makeSynth: unit => synth = [%bs.raw
   {|
 function () {
@@ -18,3 +18,20 @@ function (synth, frequency) {
 }
 |}
 ];
+
+let effect: ((RelativeNotesState.acceptEvent) => (unit => option(unit => unit))) = {
+    let synthRef: ref(option(synth)) = ref(None);
+    RelativeNotesState.listenerEffect(stateChange => {
+      switch (stateChange) {
+      | CurrentNoteChanged(currentNote) =>
+        switch (synthRef^) {
+        | None =>
+          // Webaudio can be initialized only after user input
+          let synth = makeSynth();
+          synthRef := Some(synth);
+          play(synth, Note.frequency(currentNote));
+        | Some(synth) => play(synth, Note.frequency(currentNote))
+        };
+      };
+    })
+  };

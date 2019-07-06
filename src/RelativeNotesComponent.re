@@ -11,23 +11,6 @@ let noteChangeListenerEffect = (setCurrentNote: ((Note.note) => unit)): ((Relati
   })
 };
 
-let synthEffect: ((RelativeNotesState.acceptEvent) => (unit => option(unit => unit))) = {
-    let synthRef: ref(option(synth)) = ref(None);
-    RelativeNotesState.listenerEffect(stateChange => {
-      switch (stateChange) {
-      | CurrentNoteChanged(currentNote) =>
-        switch (synthRef^) {
-        | None =>
-          // Webaudio can be initialized only after user input
-          let synth = makeSynth();
-          synthRef := Some(synth);
-          play(synth, Note.frequency(currentNote));
-        | Some(synth) => play(synth, Note.frequency(currentNote))
-        };
-      };
-    })
-  };
-
 let noteNameFactory = (dispatch: RelativeNotesState.acceptEvent, i: int, current: int, id: string): reactComponent => {
   let current = current == i;
   let note: Note.note = {offset: i};
@@ -58,7 +41,7 @@ let make = () => {
     
   React.useEffect0(noteChangeListenerEffect(setCurrentNote, RelativeNotesState.dispatch));
 
-  React.useEffect0(synthEffect(RelativeNotesState.dispatch));
+  React.useEffect0(Synth.effect(RelativeNotesState.dispatch));
 
   React.useEffect0(Keyboard.listenerEffect(RelativeNotesState.dispatch));
 
