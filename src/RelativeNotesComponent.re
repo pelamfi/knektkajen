@@ -1,12 +1,10 @@
 open ReactUtil;
 
-open Synth;
-
-
 let noteChangeListenerEffect = (setCurrentNote: ((Note.note) => unit)): ((RelativeNotesState.acceptEvent) => (unit => option(unit => unit))) => {
   RelativeNotesState.listenerEffect(stateChange => {
       switch (stateChange) {
       | CurrentNoteChanged(currentNote) => setCurrentNote(currentNote);
+      | _ => ()
       };
   })
 };
