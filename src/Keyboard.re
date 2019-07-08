@@ -38,12 +38,17 @@ let intervalKeyBindings: list(intervalKeyBinding) =
 let intervalForKeyboardEventNote = (event: Dom.keyboardEvent): option(Note.interval) => {
     let code = Webapi.Dom.KeyboardEvent.code(event);
     let shift: bool = Webapi.Dom.KeyboardEvent.shiftKey(event);
-    let invert = (invert: bool, interval): interval => invert ? inverse(interval) : interval
-    
-    List.getBy(intervalKeyBindings, keyBinding =>
-      keyBinding.keyCode == code
-    )
-    |> Option.map(_, binding => invert(shift, binding.interval));
+    let repeat: bool = Webapi.Dom.KeyboardEvent.repeat(event);
+    if (repeat) {
+      None
+    } else {
+      let invert = (invert: bool, interval): interval => invert ? inverse(interval) : interval
+      
+      List.getBy(intervalKeyBindings, keyBinding =>
+        keyBinding.keyCode == code
+      )
+      |> Option.map(_, binding => invert(shift, binding.interval));
+    }
 }
 
 let listenerEffect = (dispatch: RelativeNotesState.acceptEvent, _): option(unit => unit) => {
@@ -62,7 +67,7 @@ let listenerEffect = (dispatch: RelativeNotesState.acceptEvent, _): option(unit 
     };
 
     Webapi.Dom.EventTarget.addKeyDownEventListener(keyDownListener, document);
-    Webapi.Dom.EventTarget.addKeyUpEventListener(keyDownListener, document);
+    Webapi.Dom.EventTarget.addKeyUpEventListener(keyUpListener, document);
     Some(
       () => {
         Webapi.Dom.EventTarget.removeKeyDownEventListener(keyDownListener, document)

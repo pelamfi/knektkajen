@@ -5,7 +5,7 @@ let makeSynth: unit => synth = [%bs.raw
   {|
 function () {
   const Tone = require('tone')
-  const s = new Tone.PolySynth(6, new Tone.Synth()).toMaster();
+  const s = new Tone.PolySynth(6, Tone.Synth).toMaster();
   return s
 }
 |}
@@ -22,7 +22,7 @@ function (synth, frequency) {
 let triggerAttack: (synth, float) => unit = [%bs.raw
   {|
 function (synth, frequency) {
-  synth.triggerAttack(frequency, '8n')
+  synth.triggerAttack(frequency)
 }
 |}
 ];
@@ -30,7 +30,7 @@ function (synth, frequency) {
 let triggerRelease: (synth, float) => unit = [%bs.raw
   {|
 function (synth, frequency) {
-  synth.triggeRelease(frequency, '8n')
+  synth.triggeRelease(frequency)
 }
 |}
 ];
