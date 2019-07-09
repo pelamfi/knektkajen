@@ -16,7 +16,7 @@ type voiceState =
   | Attack
   | Release;
 
-type voice = {key: voiceKey, updateIndex: int, trigger, state: voiceState, prevState: voiceState};
+type voice = {key: voiceKey, updateIndex: int, trigger, state: voiceState, prevState: voiceState, allocated: int};
 
 type stateChange =
   | CurrentNoteChanged(note)
@@ -91,6 +91,8 @@ let stringOfStateChange = (stateChange: stateChange): string => {
   }
 }
 
+let voices = 6
+
 let stringOfState = (state: state): string => {
   Printf.sprintf("[currentNote: %s, updateIndex:%d, voices: [%s], lastUpdate: [%s]]", 
     Note.nameOfNoteInCMajor(state.currentNote), state.updateIndex,
@@ -123,9 +125,9 @@ let triggerClickVoice = (state: state, note: note): (voice, list(voice))  => {
   let trigger = NoteClick(note)
   switch (sameKeyVoice(Single(note), state)) {
     | ([previous, ..._], others) => // should only be 1 matching
-    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: previous.state}, others)
+    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: previous.state, allocated: 0}, others)
     | ([], others) =>
-    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: Idle}, others)
+    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: Idle, allocated: 0}, others)
   }
 }
 
@@ -134,9 +136,9 @@ let triggerIntervalKeyDownVoice = (state: state, interval: interval): (voice, li
   let note = Note.noteApplyInterval(state.currentNote, interval);
   switch (sameKeyVoice(Single(note), state)) {
     | ([previous, ..._], others) => // should only be 1 matching
-    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Attack, prevState: previous.state}, others)
+    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Attack, prevState: previous.state, allocated: 0}, others)
     | ([], others) =>
-    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: Attack, prevState: Idle}, others)
+    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: Attack, prevState: Idle, allocated: 0}, others)
   }
 }
 
@@ -144,7 +146,7 @@ let triggerIntervalKeyUpVoice = (state: state, interval: interval): (option(voic
   let trigger = IntervalRelease(interval)
   switch (Belt.List.partition(state.voices, voice => {voice.trigger == IntervalAttack(interval)})) {
     | ([previous, ..._], others) =>
-    (Some({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Release, prevState: previous.state}), others)
+    (Some({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Release, prevState: previous.state, allocated: 0}), others)
     | ([], others) =>
     Js.log(Printf.sprintf("Unexpected voice trigger: trigger:%s, state: %s",
       stringOfTrigger(trigger), stringOfState(state)));

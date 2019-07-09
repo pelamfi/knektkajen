@@ -23,7 +23,6 @@ function (Tone) {
 let triggerAttackRelease: (synth, float) => unit = [%bs.raw
   {|
 function (synth, frequency) {
-    console.log("triggerAttackRelease", frequency)
     synth.triggerAttackRelease(frequency, '8n')
 }
 |}
@@ -32,7 +31,6 @@ function (synth, frequency) {
 let triggerAttack: (synth, float) => unit = [%bs.raw
   {|
 function (synth, frequency) {
-    console.log("triggerAttack", frequency)
     synth.triggerAttack(frequency)
 }
 |}
@@ -46,7 +44,11 @@ function (synth) {
 |}
 ];
 
-let playVoice = (synth: synth, voice: RelativeNotesState.voice): unit => {
+let playVoice = (synths: list(synth), voice: RelativeNotesState.voice): unit => {
+    let synth = List.nth(synths, voice.allocated)
+
+    Js.log(Printf.sprintf("playVoice: allocted: %d, prevState: %s, state: %s", voice.allocated, RelativeNotesState.stringOfVoiceState(voice.prevState), RelativeNotesState.stringOfVoiceState(voice.state)))
+
     switch(voice.key, voice.state, voice.prevState) {
         | (Single(note), _, Attack) =>
         triggerRelease(synth)
@@ -62,18 +64,19 @@ let playVoice = (synth: synth, voice: RelativeNotesState.voice): unit => {
 }
 
 let effect: ((RelativeNotesState.acceptEvent) => (unit => option(unit => unit))) = {
-    let synthRef: ref(option(synth)) = ref(None);
+    let synthsRef: ref(option(list(synth))) = ref(None);
     RelativeNotesState.listenerEffect(stateChange => {
       switch (stateChange) {
       | Voice(voice) =>
-        switch (synthRef^) {
+        switch (synthsRef^) {
         | None =>
-          // Webaudio can be initialized only after user input
-          let tone = requireTone()
-          let synth = makeSynth(tone);
-          synthRef := Some(synth);
-          playVoice(synth, voice);
-        | Some(synth) => playVoice(synth, voice)
+            // Webaudio can be initialized only after user input
+            let tone = requireTone()
+            let synths: list(synth) = RangeOfInt.make(0, RelativeNotesState.voices) |> RangeOfInt.map(_, _ => makeSynth(tone));
+
+            synthsRef := Some(synths);
+            playVoice(synths, voice);
+        | Some(synths) => playVoice(synths, voice)
         };
       | _ => ()
       };
