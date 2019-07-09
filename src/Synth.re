@@ -1,11 +1,20 @@
 
 type synth;
+type tone;
 
-let makeSynth: unit => synth = [%bs.raw
+let requireTone: unit => tone  = [%bs.raw
   {|
 function () {
   const Tone = require('tone')
-  const s = new Tone.PolySynth(6, Tone.Synth).toMaster();
+  return Tone
+}
+|}
+];
+
+let makeSynth: tone => synth = [%bs.raw
+  {|
+function (Tone) {
+  const s = new Tone.Synth().toMaster();
   return s
 }
 |}
@@ -14,7 +23,8 @@ function () {
 let triggerAttackRelease: (synth, float) => unit = [%bs.raw
   {|
 function (synth, frequency) {
-  synth.triggerAttackRelease(frequency, '8n')
+    console.log("triggerAttackRelease", frequency)
+    synth.triggerAttackRelease(frequency, '8n')
 }
 |}
 ];
@@ -22,15 +32,16 @@ function (synth, frequency) {
 let triggerAttack: (synth, float) => unit = [%bs.raw
   {|
 function (synth, frequency) {
-  synth.triggerAttack(frequency)
+    console.log("triggerAttack", frequency)
+    synth.triggerAttack(frequency)
 }
 |}
 ];
 
-let triggerRelease: (synth, float) => unit = [%bs.raw
+let triggerRelease: (synth) => unit = [%bs.raw
   {|
-function (synth, frequency) {
-  synth.triggerRelease(frequency)
+function (synth) {
+    synth.triggerRelease()
 }
 |}
 ];
@@ -38,7 +49,7 @@ function (synth, frequency) {
 let playVoice = (synth: synth, voice: RelativeNotesState.voice): unit => {
     switch(voice.key, voice.state, voice.prevState) {
         | (Single(note), _, Attack) =>
-        triggerRelease(synth, Note.frequency(note))
+        triggerRelease(synth)
         | _ => ()
     }
     switch(voice.key, voice.state) {
@@ -58,7 +69,8 @@ let effect: ((RelativeNotesState.acceptEvent) => (unit => option(unit => unit)))
         switch (synthRef^) {
         | None =>
           // Webaudio can be initialized only after user input
-          let synth = makeSynth();
+          let tone = requireTone()
+          let synth = makeSynth(tone);
           synthRef := Some(synth);
           playVoice(synth, voice);
         | Some(synth) => playVoice(synth, voice)
