@@ -30,7 +30,7 @@ function (synth, frequency) {
 let triggerRelease: (synth, float) => unit = [%bs.raw
   {|
 function (synth, frequency) {
-  synth.triggeRelease(frequency)
+  synth.triggerRelease(frequency)
 }
 |}
 ];

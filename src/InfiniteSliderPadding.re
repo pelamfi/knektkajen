@@ -152,7 +152,7 @@ let stateMachine = (state, event): state => {
         );
       Animating({...animationState, t: newT, timer: updatedTimer});
     | (state, _) =>
-      Js.log("INVALID TRANSITION");
+      Js.log("InfiniteSliderPadding: Error: INVALID TRANSITION");
       state;
     };
   newState;

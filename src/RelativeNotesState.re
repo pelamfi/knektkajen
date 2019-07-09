@@ -8,7 +8,7 @@ type voiceKey =
 type trigger =
   | IntervalAttack(interval)
   | IntervalRelease(interval)
-  | Click;
+  | NoteClick(note);
 
 type voiceState =
   | Idle
@@ -48,14 +48,6 @@ let emit = (state: state, stateChange: stateChange) => {
   Belt.List.forEach(state.listeners, listener => listener(stateChange));
 };
 
-let voiceStateOfTrigger = (trigger: trigger): voiceState => {
-  switch(trigger) {
-    | IntervalAttack(_) => Attack
-    | IntervalRelease(_) => Release
-    | Click => AttackRelease
-  }
-};
-
 // https://stackoverflow.com/questions/49944067/join-array-of-strings
 let commaSeparated = (items: list(string)): string => {
   switch(items) {
@@ -80,8 +72,16 @@ let stringOfVoiceState = (voiceState: voiceState): string => {
   }
 }
 
+let stringOfTrigger = (trigger: trigger): string => {
+  switch(trigger) {
+    | IntervalAttack(interval) => "IntervalAttack(" ++ string_of_int(interval.steps) ++ ")"
+    | IntervalRelease(interval) => "IntervalRelease(" ++ string_of_int(interval.steps) ++ ")"
+    | NoteClick(note) => "NoteClick(" ++ Note.nameOfNoteInCMajor(note) ++ ")"
+  }
+}
+
 let stringOfVoice = (voice: voice): string => {
-  Printf.sprintf("[%s, state: %s]", stringOfVoiceKey(voice.key), stringOfVoiceState(voice.state))
+  Printf.sprintf("[%s, state: %s, trigger: %s]", stringOfVoiceKey(voice.key), stringOfVoiceState(voice.state), stringOfTrigger(voice.trigger))
 }
 
 let stringOfStateChange = (stateChange: stateChange): string => {
@@ -109,44 +109,86 @@ let stringOfEvent = (event: event): string => {
   }
 }
 
-let triggerVoice = (voiceKey: voiceKey, trigger: trigger, state: state): state => {
+let sameKeyVoice = (voiceKey: voiceKey, state: state): (list(voice), list(voice)) => {Belt.List.partition(state.voices, voice => {voice.key == voiceKey})};
+  
+let isVoiceActive = (voice: voice): bool => {
+  switch(voice.state) {
+    | Release => false
+    | AttackRelease => false // TODO: Not correct really. Should track duration
+    | _ => true
+  }
+}
 
-  let (updatedVoice, otherVoices: list(voice)) = switch (Belt.List.partition(state.voices, voice => voice.key == voiceKey)) {
-    | ([existing, ..._], others) => // there should be only 1 matching the key
-      ({key: voiceKey, updateIndex: state.updateIndex, trigger, state: voiceStateOfTrigger(trigger), prevState: existing.state}, others)
+let triggerClickVoice = (state: state, note: note): (voice, list(voice))  => {
+  let trigger = NoteClick(note)
+  switch (sameKeyVoice(Single(note), state)) {
+    | ([previous, ..._], others) => // should only be 1 matching
+    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: previous.state}, others)
     | ([], others) =>
-      ({key: voiceKey, updateIndex: state.updateIndex, trigger, state: voiceStateOfTrigger(trigger), prevState: Idle}, others)
-  };
+    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: Idle}, others)
+  }
+}
 
-  {...state, voices: [updatedVoice, ...otherVoices], lastUpdate: [Voice(updatedVoice), ...state.lastUpdate]}
-};
+let triggerIntervalKeyDownVoice = (state: state, interval: interval): (voice, list(voice)) => {
+  let trigger = IntervalAttack(interval)
+  let note = Note.noteApplyInterval(state.currentNote, interval);
+  switch (sameKeyVoice(Single(note), state)) {
+    | ([previous, ..._], others) => // should only be 1 matching
+    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Attack, prevState: previous.state}, others)
+    | ([], others) =>
+    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: Attack, prevState: Idle}, others)
+  }
+}
+
+let triggerIntervalKeyUpVoice = (state: state, interval: interval): (option(voice), list(voice)) => {
+  let trigger = IntervalRelease(interval)
+  switch (Belt.List.partition(state.voices, voice => {voice.trigger == IntervalAttack(interval)})) {
+    | ([previous, ..._], others) =>
+    (Some({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Release, prevState: previous.state}), others)
+    | ([], others) =>
+    Js.log(Printf.sprintf("Unexpected voice trigger: trigger:%s, state: %s",
+      stringOfTrigger(trigger), stringOfState(state)));
+    (None, state.voices)
+  }
+}
 
 let updateState = (prevState: state, event: event): state => {
-  let state = {...prevState, updateIndex: prevState.updateIndex + 1, lastUpdate: []}
+  let state = {...prevState, updateIndex: prevState.updateIndex + 1, lastUpdate: []};
+
   let newState: state =
     switch (event) {
     | ClickNote(newCurrentNote) =>
-      let stateWithVoice = triggerVoice(Single(newCurrentNote), Click, state);
-      {...stateWithVoice, 
+      let (updatedVoice, otherVoices) = triggerClickVoice(state, newCurrentNote);
+      {...state, 
         currentNote: newCurrentNote, 
-        lastUpdate: [CurrentNoteChanged(state.currentNote), ...stateWithVoice.lastUpdate]}
+        voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
+        lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
     | ClickInterval(interval) =>
-      let newCurrentNote: note = noteApplyInterval(state.currentNote, interval);
-      let stateWithVoice = triggerVoice(Single(newCurrentNote), Click, state);
-      {...stateWithVoice, 
+      let newCurrentNote = Note.noteApplyInterval(state.currentNote, interval)
+      let (updatedVoice, otherVoices) = triggerClickVoice(state, newCurrentNote);
+      {...state, 
         currentNote: newCurrentNote, 
-        lastUpdate: [CurrentNoteChanged(state.currentNote), ...stateWithVoice.lastUpdate]}
+        voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
+        lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
     | KeyDownInterval(interval) =>
-      let newCurrentNote: note = noteApplyInterval(state.currentNote, interval);
-      let stateWithVoice = triggerVoice(Single(newCurrentNote), IntervalAttack(interval), state);
-      {...stateWithVoice, 
-        currentNote: newCurrentNote, 
-        lastUpdate: [CurrentNoteChanged(state.currentNote), ...stateWithVoice.lastUpdate]}
+      let (updatedVoice, otherVoices) = triggerIntervalKeyDownVoice(state, interval);
+      {...state,
+        voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
+        lastUpdate: [Voice(updatedVoice)]}
     | KeyUpInterval(interval) =>
-      let newCurrentNote: note = noteApplyInterval(state.currentNote, interval);
-      // TODO: newCurrentNote is wrong...
-      let stateWithVoice = triggerVoice(Single(newCurrentNote), IntervalRelease(interval), state);
-      stateWithVoice
+      let (updatedVoice, otherVoices) = triggerIntervalKeyUpVoice(state, interval);
+      switch(updatedVoice) {
+        | Some(updatedVoice) =>
+        switch(updatedVoice.key) {
+          | Single(newCurrentNote) =>
+          {...state, 
+          currentNote: newCurrentNote, 
+          voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
+          lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
+        }
+        | None =>
+        state
+      }
     | RegisterListener(listener) => {
         ...state,
         listeners: [listener, ...state.listeners],
@@ -160,7 +202,7 @@ let updateState = (prevState: state, event: event): state => {
 
   Belt.List.forEach(newState.lastUpdate, emit(state));
 
-  Js.log(Printf.sprintf("%s -> %s on %s", stringOfState(prevState), stringOfState(newState), stringOfEvent(event)));
+  Js.log(Printf.sprintf("%s on %s", stringOfState(newState), stringOfEvent(event)));
 
   newState;
 };
