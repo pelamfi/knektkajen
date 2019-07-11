@@ -27,7 +27,7 @@ let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.co
   componentBaseName: "relativeNotes",
   itemSelectedDispatch: i => {
     let note: Note.note = {offset: i};
-    dispatch(ClickNote(note));
+    dispatch(NoteTrigger(NoteClick(note, MouseClick)));
   },
   itemsWindow: RangeOfInt.make((-12) * 2, 12 * 2),
   maxJump: 12,

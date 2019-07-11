@@ -35,7 +35,7 @@ let intervalKeyBindings: list(intervalKeyBinding) =
        )
      );
 
-let intervalForKeyboardEventNote = (event: Dom.keyboardEvent): option(Note.interval) => {
+let noteTriggerForKeyboardEvent = (event: Dom.keyboardEvent, ~keyUp: bool): option(RelativeNotesState.trigger) => {
     let code = Webapi.Dom.KeyboardEvent.code(event);
     let shift: bool = Webapi.Dom.KeyboardEvent.shiftKey(event);
     let repeat: bool = Webapi.Dom.KeyboardEvent.repeat(event);
@@ -43,11 +43,19 @@ let intervalForKeyboardEventNote = (event: Dom.keyboardEvent): option(Note.inter
       None
     } else {
       let invert = (invert: bool, interval): interval => invert ? inverse(interval) : interval
-      
-      List.getBy(intervalKeyBindings, keyBinding =>
+
+      let interval = List.getBy(intervalKeyBindings, keyBinding =>
         keyBinding.keyCode == code
       )
       |> Option.map(_, binding => invert(shift, binding.interval));
+
+      switch(interval, keyUp) {
+        | (Some(_), true) =>
+          Some(Release(Keyboard(code)))
+        | (Some(interval), false) =>
+          Some(IntervalAttack(interval, Keyboard(code)))
+        | (None, _) => None
+      }
     }
 }
 
@@ -55,14 +63,14 @@ let listenerEffect = (dispatch: RelativeNotesState.acceptEvent, _): option(unit 
     let document = Webapi.Dom.Document.asEventTarget(Webapi.Dom.document);
 
     let keyDownListener = (event: Dom.keyboardEvent): unit => {
-      intervalForKeyboardEventNote(event) 
-        |> Option.map(_, interval => {dispatch(KeyDownInterval(interval))})
+      noteTriggerForKeyboardEvent(event, ~keyUp = false)
+        |> Option.map(_, trigger => {dispatch(NoteTrigger(trigger))})
         |> ignore
     };
     
     let keyUpListener = (event: Dom.keyboardEvent): unit => {
-      intervalForKeyboardEventNote(event) 
-        |> Option.map(_, interval => {dispatch(KeyUpInterval(interval))})
+      noteTriggerForKeyboardEvent(event, ~keyUp = true)
+        |> Option.map(_, trigger => {dispatch(NoteTrigger(trigger))})
         |> ignore
     };
 

@@ -5,10 +5,16 @@ open Note;
 type voiceKey =   
   | Single(note)
 
+type triggerId =
+  | Idle
+  | MouseClick
+  | Keyboard(string)
+
 type trigger =
-  | IntervalAttack(interval)
-  | IntervalRelease(interval)
-  | NoteClick(note);
+  | IntervalAttack(interval, triggerId)
+  | Release(triggerId)
+  | NoteClick(note, triggerId)
+  | IntervalClick(interval, triggerId);
 
 type voiceState =
   | Idle
@@ -16,11 +22,18 @@ type voiceState =
   | Attack
   | Release;
 
-type voice = {key: voiceKey, updateIndex: int, trigger, state: voiceState, prevState: voiceState, allocated: int};
+type voice = {key: voiceKey, updateIndex: int, triggerId, state: voiceState, prevState: voiceState, allocated: int};
 
 type stateChange =
   | CurrentNoteChanged(note)
   | Voice(voice);
+
+type listener = stateChange => unit;
+
+type event =
+  | NoteTrigger(trigger)
+  | RegisterListener(listener)
+  | UnregisterListener(listener);
 
 type state = {
   currentNote: note,
@@ -30,20 +43,12 @@ type state = {
   lastUpdate: list(stateChange)
 };
 
-type listener = stateChange => unit;
 
-type event =
-  | ClickNote(note)
-  | ClickInterval(interval)
-  | KeyDownInterval(interval)
-  | KeyUpInterval(interval)
-  | RegisterListener(listener)
-  | UnregisterListener(listener);
 
 type acceptEvent = event => unit;
 
 let idleVoice = (voiceNumber: int): voice => {
-   {key: Single(Note.middleC), updateIndex: 0, trigger: NoteClick(Note.middleC), state: Idle, prevState: Idle, allocated: voiceNumber}
+   {key: Single(Note.middleC), updateIndex: 0, triggerId: Idle, state: Idle, prevState: Idle, allocated: voiceNumber}
 }
 
 let voices = 6
@@ -80,16 +85,26 @@ let stringOfVoiceState = (voiceState: voiceState): string => {
   }
 }
 
-let stringOfTrigger = (trigger: trigger): string => {
-  switch(trigger) {
-    | IntervalAttack(interval) => "IntervalAttack(" ++ string_of_int(interval.steps) ++ ")"
-    | IntervalRelease(interval) => "IntervalRelease(" ++ string_of_int(interval.steps) ++ ")"
-    | NoteClick(note) => "NoteClick(" ++ Note.nameOfNoteInCMajor(note) ++ ")"
+let stringOfTriggerId = (triggerId: triggerId): string => {
+  switch(triggerId) {
+    | Idle => "NotTriggered"
+    | MouseClick => "MouseClick"
+    | Keyboard(id) => "Keyboard(" ++ id ++")"
   }
 }
 
+let stringOfTrigger = (trigger: trigger): string => {
+  switch(trigger) {
+    | IntervalAttack(interval, triggerId) => "IntervalAttack(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
+    | Release(triggerId) => "IntervalRelease(" ++ stringOfTriggerId(triggerId) ++ ")"
+    | NoteClick(note, triggerId) => "NoteClick(" ++ Note.nameOfNoteInCMajor(note) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
+    | IntervalClick(interval, triggerId) => "IntervalClick(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
+  }
+}
+
+
 let stringOfVoice = (voice: voice): string => {
-  Printf.sprintf("[%s, state: %s, trigger: %s]", stringOfVoiceKey(voice.key), stringOfVoiceState(voice.state), stringOfTrigger(voice.trigger))
+  Printf.sprintf("[%s, state: %s, triggerId: %s]", stringOfVoiceKey(voice.key), stringOfVoiceState(voice.state), stringOfTriggerId(voice.triggerId))
 }
 
 let stringOfStateChange = (stateChange: stateChange): string => {
@@ -108,10 +123,7 @@ let stringOfState = (state: state): string => {
 
 let stringOfEvent = (event: event): string => {
   switch(event){
-    | ClickNote(note) => "ClickNote(" ++ Note.nameOfNoteInCMajor(note) ++ ")"
-    | ClickInterval(interval) => "ClickInterval(" ++ string_of_int(interval.steps) ++ ")"
-    | KeyDownInterval(interval) => "KeyDownInterval(" ++ string_of_int(interval.steps) ++ ")"
-    | KeyUpInterval(interval) => "KeyUpInterval(" ++ string_of_int(interval.steps) ++ ")"
+    | NoteTrigger(trigger) => "triggerNote(" ++ stringOfTrigger(trigger) ++ ")"
     | RegisterListener(_) => "RegisterListener(" ++ "..." ++ ")"
     | UnregisterListener(_) => "UnregisterListener(" ++ "..." ++ ")"
   }
@@ -144,38 +156,46 @@ let isVoiceActive = (voice: voice): bool => {
   }
 }
 
-let triggerClickVoice = (state: state, note: note): (option(voice), list(voice))  => {
-  let trigger = NoteClick(note);
+let triggerClickVoice = (state: state, note: note, triggerId: triggerId): (option(voice), list(voice))  => {
   switch (matchingVoiceOrLRU((voice) => {voice.key == Single(note)}, state)) {
     | (Some(previous), others) => // should only be 1 matching
-    (Some({...previous, key: Single(note), updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: previous.state}), others)
+    (Some({...previous, key: Single(note), updateIndex: state.updateIndex, triggerId, state: AttackRelease, prevState: previous.state}), others)
     | (None, others) =>
     Js.log("triggerClickVoice: no voices?");
     (None, state.voices)
   }
 }
 
-let triggerIntervalKeyDownVoice = (state: state, interval: interval): (option(voice), list(voice)) => {
-  let trigger = IntervalAttack(interval);
+let triggerIntervalKeyDownVoice = (state: state, interval: interval, triggerId: triggerId): (option(voice), list(voice)) => {
+  let trigger = IntervalAttack(interval, triggerId);
   let note = Note.noteApplyInterval(state.currentNote, interval);
   switch (matchingVoiceOrLRU((voice) => {voice.key == Single(note)}, state)) {
     | (Some(previous), others) => // should only be 1 matching
-    (Some({...previous, key: Single(note), updateIndex: state.updateIndex, trigger, state: Attack, prevState: previous.state}), others)
+    (Some({...previous, key: Single(note), updateIndex: state.updateIndex, triggerId, state: Attack, prevState: previous.state}), others)
     | (None, others) =>
     Js.log("triggerClickVoice: no voices?");
     (None, state.voices)
   }
 }
 
-let triggerIntervalKeyUpVoice = (state: state, interval: interval): (option(voice), list(voice)) => {
-  let trigger = IntervalRelease(interval)
-  switch (Belt.List.partition(state.voices, voice => {voice.trigger == IntervalAttack(interval)})) {
+let triggerIntervalKeyUpVoice = (state: state, triggerId): (option(voice), list(voice)) => {
+  switch (Belt.List.partition(state.voices, voice => {voice.triggerId == triggerId})) {
     | ([previous], others) =>
-      (Some({...previous, updateIndex: state.updateIndex, trigger, state: Release, prevState: previous.state}), others)
+      (Some({...previous, updateIndex: state.updateIndex, triggerId: Idle, state: Release, prevState: previous.state}), others)
     | (_, _) =>
-      Js.log(Printf.sprintf("triggerIntervalKeyUpVoice: Unexpected voice trigger: trigger:%s, state: %s",
-      stringOfTrigger(trigger), stringOfState(state)));
+      Js.log(Printf.sprintf("triggerIntervalKeyUpVoice: Unexpected voice trigger: state: %s", stringOfState(state)));
       (None, state.voices)
+  }
+}
+
+let handleSingleShotNote = (state: state, note: note, triggerId: triggerId): state => {
+  switch (triggerClickVoice(state, note, triggerId)) {
+    | (Some(updatedVoice), otherVoices) =>
+      {...state, 
+        currentNote: note, 
+        voices: [updatedVoice, ...otherVoices],
+        lastUpdate: [CurrentNoteChanged(note), Voice(updatedVoice)]}
+    | (_, _) => state
   }
 }
 
@@ -184,35 +204,20 @@ let updateState = (prevState: state, event: event): state => {
 
   let newState: state =
     switch (event) {
-    | ClickNote(newCurrentNote) =>
-      switch (triggerClickVoice(state, newCurrentNote)) {
-        | (Some(updatedVoice), otherVoices) =>
-          {...state, 
-            currentNote: newCurrentNote, 
-            voices: [updatedVoice, ...otherVoices],
-            lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
-        | (_, _) => state
-      }
-    | ClickInterval(interval) =>
-      let newCurrentNote = Note.noteApplyInterval(state.currentNote, interval)
-      switch (triggerClickVoice(state, newCurrentNote)) { // DRY!
-        | (Some(updatedVoice), otherVoices) =>
-          {...state, 
-            currentNote: newCurrentNote, 
-            voices: [updatedVoice, ...otherVoices],
-            lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
-        | (_, _) => state
-      }
-    | KeyDownInterval(interval) =>
-      switch(triggerIntervalKeyDownVoice(state, interval)) {
+    | NoteTrigger(NoteClick(note, triggerId)) => handleSingleShotNote(state, note, triggerId)
+    | NoteTrigger(IntervalClick(interval, triggerId)) =>
+      let note  = Note.noteApplyInterval(state.currentNote, interval)
+      handleSingleShotNote(state, note, triggerId)
+    | NoteTrigger(IntervalAttack(interval, triggerId)) =>
+      switch(triggerIntervalKeyDownVoice(state, interval, triggerId)) {
         | (Some(updatedVoice), otherVoices) =>
           {...state,
             voices: [updatedVoice, ...otherVoices],
             lastUpdate: [Voice(updatedVoice)]}
         | (_, _) => state
       }
-    | KeyUpInterval(interval) =>
-      switch(triggerIntervalKeyUpVoice(state, interval)) {
+    | NoteTrigger(Release(triggerId)) =>
+      switch(triggerIntervalKeyUpVoice(state, triggerId)) {
         | (Some(updatedVoice), otherVoices) =>
           switch(updatedVoice.key) {
             | Single(newCurrentNote) =>
