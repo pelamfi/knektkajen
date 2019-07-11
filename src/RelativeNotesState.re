@@ -42,7 +42,15 @@ type event =
 
 type acceptEvent = event => unit;
 
-let initialState: state = {currentNote: middleC, updateIndex: 0, voices: [], listeners: [], lastUpdate: []};
+let idleVoice = (voiceNumber: int): voice => {
+   {key: Single(Note.middleC), updateIndex: 0, trigger: NoteClick(Note.middleC), state: Idle, prevState: Idle, allocated: voiceNumber}
+}
+
+let voices = 6
+
+let initialVoices = RangeOfInt.make(0, voices) |> RangeOfInt.map(_, idleVoice)
+
+let initialState: state = {currentNote: middleC, updateIndex: 0, voices: initialVoices, listeners: [], lastUpdate: []};
 
 let emit = (state: state, stateChange: stateChange) => {
   Belt.List.forEach(state.listeners, listener => listener(stateChange));
@@ -91,8 +99,6 @@ let stringOfStateChange = (stateChange: stateChange): string => {
   }
 }
 
-let voices = 6
-
 let stringOfState = (state: state): string => {
   Printf.sprintf("[currentNote: %s, updateIndex:%d, voices: [%s], lastUpdate: [%s]]", 
     Note.nameOfNoteInCMajor(state.currentNote), state.updateIndex,
@@ -111,7 +117,24 @@ let stringOfEvent = (event: event): string => {
   }
 }
 
-let sameKeyVoice = (voiceKey: voiceKey, state: state): (list(voice), list(voice)) => {Belt.List.partition(state.voices, voice => {voice.key == voiceKey})};
+let matchingVoiceOrLRU = (pred: ((voice) => bool), state: state): (option(voice), list(voice)) => {
+  switch (Belt.List.partition(state.voices, pred)) {
+    | ([], others) =>
+      // no match, take last to get LRU scheme
+      switch(Belt.List.reverse(others)) {
+        | [last, ...tail] =>
+          (Some(last), Belt.List.reverse(tail))
+        | [] =>
+          Js.log("sameKeyVoice: no voices?");
+          (None, [])
+      }
+    | ([matching], others) =>
+    (Some(matching), others)  
+    | ([firstMatching, ...moreThan1Matching], others) =>
+    Js.log("sameKeyVoice: more than 1 matching?");
+      (Some(firstMatching), Belt.List.concat(moreThan1Matching, others))
+  }
+}
   
 let isVoiceActive = (voice: voice): bool => {
   switch(voice.state) {
@@ -121,36 +144,38 @@ let isVoiceActive = (voice: voice): bool => {
   }
 }
 
-let triggerClickVoice = (state: state, note: note): (voice, list(voice))  => {
-  let trigger = NoteClick(note)
-  switch (sameKeyVoice(Single(note), state)) {
-    | ([previous, ..._], others) => // should only be 1 matching
-    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: previous.state, allocated: 0}, others)
-    | ([], others) =>
-    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: Idle, allocated: 0}, others)
+let triggerClickVoice = (state: state, note: note): (option(voice), list(voice))  => {
+  let trigger = NoteClick(note);
+  switch (matchingVoiceOrLRU((voice) => {voice.key == Single(note)}, state)) {
+    | (Some(previous), others) => // should only be 1 matching
+    (Some({...previous, key: Single(note), updateIndex: state.updateIndex, trigger, state: AttackRelease, prevState: previous.state}), others)
+    | (None, others) =>
+    Js.log("triggerClickVoice: no voices?");
+    (None, state.voices)
   }
 }
 
-let triggerIntervalKeyDownVoice = (state: state, interval: interval): (voice, list(voice)) => {
-  let trigger = IntervalAttack(interval)
+let triggerIntervalKeyDownVoice = (state: state, interval: interval): (option(voice), list(voice)) => {
+  let trigger = IntervalAttack(interval);
   let note = Note.noteApplyInterval(state.currentNote, interval);
-  switch (sameKeyVoice(Single(note), state)) {
-    | ([previous, ..._], others) => // should only be 1 matching
-    ({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Attack, prevState: previous.state, allocated: 0}, others)
-    | ([], others) =>
-    ({key: Single(note), updateIndex: state.updateIndex, trigger, state: Attack, prevState: Idle, allocated: 0}, others)
+  switch (matchingVoiceOrLRU((voice) => {voice.key == Single(note)}, state)) {
+    | (Some(previous), others) => // should only be 1 matching
+    (Some({...previous, key: Single(note), updateIndex: state.updateIndex, trigger, state: Attack, prevState: previous.state}), others)
+    | (None, others) =>
+    Js.log("triggerClickVoice: no voices?");
+    (None, state.voices)
   }
 }
 
 let triggerIntervalKeyUpVoice = (state: state, interval: interval): (option(voice), list(voice)) => {
   let trigger = IntervalRelease(interval)
   switch (Belt.List.partition(state.voices, voice => {voice.trigger == IntervalAttack(interval)})) {
-    | ([previous, ..._], others) =>
-    (Some({key: previous.key /*Single(note)*/, updateIndex: state.updateIndex, trigger, state: Release, prevState: previous.state, allocated: 0}), others)
-    | ([], others) =>
-    Js.log(Printf.sprintf("Unexpected voice trigger: trigger:%s, state: %s",
+    | ([previous], others) =>
+      (Some({...previous, updateIndex: state.updateIndex, trigger, state: Release, prevState: previous.state}), others)
+    | (_, _) =>
+      Js.log(Printf.sprintf("triggerIntervalKeyUpVoice: Unexpected voice trigger: trigger:%s, state: %s",
       stringOfTrigger(trigger), stringOfState(state)));
-    (None, state.voices)
+      (None, state.voices)
   }
 }
 
@@ -160,35 +185,45 @@ let updateState = (prevState: state, event: event): state => {
   let newState: state =
     switch (event) {
     | ClickNote(newCurrentNote) =>
-      let (updatedVoice, otherVoices) = triggerClickVoice(state, newCurrentNote);
-      {...state, 
-        currentNote: newCurrentNote, 
-        voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
-        lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
+      switch (triggerClickVoice(state, newCurrentNote)) {
+        | (Some(updatedVoice), otherVoices) =>
+          {...state, 
+            currentNote: newCurrentNote, 
+            voices: [updatedVoice, ...otherVoices],
+            lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
+        | (_, _) => state
+      }
     | ClickInterval(interval) =>
       let newCurrentNote = Note.noteApplyInterval(state.currentNote, interval)
-      let (updatedVoice, otherVoices) = triggerClickVoice(state, newCurrentNote);
-      {...state, 
-        currentNote: newCurrentNote, 
-        voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
-        lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
-    | KeyDownInterval(interval) =>
-      let (updatedVoice, otherVoices) = triggerIntervalKeyDownVoice(state, interval);
-      {...state,
-        voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
-        lastUpdate: [Voice(updatedVoice)]}
-    | KeyUpInterval(interval) =>
-      let (updatedVoice, otherVoices) = triggerIntervalKeyUpVoice(state, interval);
-      switch(updatedVoice) {
-        | Some(updatedVoice) =>
-        switch(updatedVoice.key) {
-          | Single(newCurrentNote) =>
+      switch (triggerClickVoice(state, newCurrentNote)) { // DRY!
+        | (Some(updatedVoice), otherVoices) =>
           {...state, 
-          currentNote: newCurrentNote, 
-          voices: [updatedVoice, ...Belt.List.keep(otherVoices, isVoiceActive)],
-          lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
-        }
-        | None =>
+            currentNote: newCurrentNote, 
+            voices: [updatedVoice, ...otherVoices],
+            lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
+        | (_, _) => state
+      }
+    | KeyDownInterval(interval) =>
+      switch(triggerIntervalKeyDownVoice(state, interval)) {
+        | (Some(updatedVoice), otherVoices) =>
+          {...state,
+            voices: [updatedVoice, ...otherVoices],
+            lastUpdate: [Voice(updatedVoice)]}
+        | (_, _) => state
+      }
+    | KeyUpInterval(interval) =>
+      switch(triggerIntervalKeyUpVoice(state, interval)) {
+        | (Some(updatedVoice), otherVoices) =>
+          switch(updatedVoice.key) {
+            | Single(newCurrentNote) =>
+            {...state, 
+            currentNote: newCurrentNote, 
+            voices: [updatedVoice, ...otherVoices],
+            lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
+            | _ =>
+            state
+          }
+        | (_, _) =>
         state
       }
     | RegisterListener(listener) => {
