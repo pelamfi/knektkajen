@@ -37,6 +37,7 @@ type event =
 
 type state = {
   currentNote: note,
+  lowestNoteInChord: option(note),
   updateIndex: int,
   voices: list(voice),
   listeners: list(stateChange => unit),
@@ -55,7 +56,7 @@ let voices = 6
 
 let initialVoices = RangeOfInt.make(0, voices) |> RangeOfInt.map(_, idleVoice)
 
-let initialState: state = {currentNote: middleC, updateIndex: 0, voices: initialVoices, listeners: [], lastUpdate: []};
+let initialState: state = {currentNote: middleC, lowestNoteInChord: None, updateIndex: 0, voices: initialVoices, listeners: [], lastUpdate: []};
 
 let emit = (state: state, stateChange: stateChange) => {
   Belt.List.forEach(state.listeners, listener => listener(stateChange));
@@ -199,6 +200,23 @@ let handleSingleShotNote = (state: state, note: note, triggerId: triggerId): sta
   }
 }
 
+let lowestNote = (voice: voice, lastLowestNote: option(note)): note => {
+  switch(voice.key) {
+    | Single(note) => 
+      switch(lastLowestNote) {
+        | Some(lastLowestNote) => Note.min(lastLowestNote, note)
+        | None => note
+      }
+  }
+}
+
+let notPlaying = (voice: voice): bool => {
+  switch(voice.state) {
+    | Attack => false
+    | _ => true
+  }
+}
+
 let updateState = (prevState: state, event: event): state => {
   let state = {...prevState, updateIndex: prevState.updateIndex + 1, lastUpdate: []};
 
@@ -212,6 +230,7 @@ let updateState = (prevState: state, event: event): state => {
       switch(triggerIntervalKeyDownVoice(state, interval, triggerId)) {
         | (Some(updatedVoice), otherVoices) =>
           {...state,
+            lowestNoteInChord: Some(lowestNote(updatedVoice, state.lowestNoteInChord)),
             voices: [updatedVoice, ...otherVoices],
             lastUpdate: [Voice(updatedVoice)]}
         | (_, _) => state
@@ -219,15 +238,18 @@ let updateState = (prevState: state, event: event): state => {
     | NoteTrigger(Release(triggerId)) =>
       switch(triggerIntervalKeyUpVoice(state, triggerId)) {
         | (Some(updatedVoice), otherVoices) =>
-          switch(updatedVoice.key) {
-            | Single(newCurrentNote) =>
-            {...state, 
-            currentNote: newCurrentNote, 
-            voices: [updatedVoice, ...otherVoices],
-            lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
-            | _ =>
-            state
-          }
+            switch(state.lowestNoteInChord) {
+              | Some(newCurrentNote) when Belt.List.every(otherVoices, notPlaying) =>
+              {...state, 
+              lowestNoteInChord: None, // "chord" ended
+              currentNote: newCurrentNote,
+              voices: [updatedVoice, ...otherVoices],
+              lastUpdate: [CurrentNoteChanged(newCurrentNote), Voice(updatedVoice)]}
+              | _ =>
+              {...state, 
+              voices: [updatedVoice, ...otherVoices],
+              lastUpdate: [Voice(updatedVoice)]}
+            }
         | (_, _) =>
         state
       }
