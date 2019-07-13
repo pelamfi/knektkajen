@@ -79,6 +79,40 @@ type scaleName = {
   scaleClass,
 };
 
+type interval = {steps: int};
+
+// The number is in the scientific octave naming system. 0 is the octave where A is 27.5
+// https://www.wikiwand.com/en/Musical_note#/section_Note_designation_in_accordance_with_octave_name
+// https://www.wikiwand.com/en/Scientific_pitch_notation
+type octave = {number: int}
+
+let octaveOfNote = (note: note): octave => {
+  let shiftedBy0Octave = note.offset + 12 * 4
+  if (shiftedBy0Octave < 0) {
+    {number: shiftedBy0Octave / 12 - 1}
+  } else {
+    {number: shiftedBy0Octave / 12}
+  }
+}
+
+let subscriptOfOctave = (octave: octave): string => {
+  switch(octave.number) {
+    | 0 => {js|₀|js}
+    | 1 => {js|₁|js}
+    | 2 => {js|₂|js}
+    | 3 => {js|₃|js}
+    | 4 => {js|₄|js}
+    | 5 => {js|₅|js}
+    | 6 => {js|₆|js}
+    | 7 => {js|₇|js}
+    | 8 => {js|₈|js}
+    | 9 => {js|₉|js}
+    | _ => ""
+  }
+}
+
+let middleC: note = {offset: 0};
+
 let cMajorName: scaleName = {noteName: C, scaleClass: Major};
 
 let moduloOffset = (n: note): int =>
@@ -128,9 +162,6 @@ let range_of_int = (base: note, start: int, rangeEnd: int): list(note) => {
   |> RangeOfInt.map(_, x => {offset: base.offset + x});
 };
 
-// TODO: Interval should probably be sum type of 12 items
-type interval = {steps: int};
-
 let inverse = (i: interval): interval => {steps: i.steps * (-1)};
 
 let chromaticIntervals = Array.init(12, i => {steps: i}) |> Array.to_list;
@@ -143,11 +174,13 @@ let scaleIntervals = (s: scaleClass): list(interval) => {
   };
 };
 
-let middleC: note = {offset: 0};
-
 let noteApplyInterval = (n: note, i: interval): note => {
   offset: n.offset + i.steps,
 };
+
+//let noteApplyIntervalWithLooping = (n: note, i: interval): note => {
+//  offset: n.offset + i.steps,
+//};
 
 let scale = (rootNote: note, s: scaleClass): list(note) => {
   let intervals = scaleIntervals(s);
@@ -228,7 +261,7 @@ let stringOfNoteName = (n: noteName): string => {
 };
 
 let nameOfNoteInCMajor = (note: note): string => {
-  stringOfNoteName(noteNameForScaleName(note, cMajorName));
+  stringOfNoteName(noteNameForScaleName(note, cMajorName)) ++ subscriptOfOctave(octaveOfNote(note))
 };
 
 let min = (note: note, otherNote: note): note => {
