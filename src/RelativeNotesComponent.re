@@ -11,7 +11,7 @@ let noteChangeListenerEffect = (setCurrentNote: ((Note.note) => unit)): ((Relati
 
 let noteNameFactory = (dispatch: RelativeNotesState.acceptEvent, i: int, current: int, id: string): reactComponent => {
   let current = current == i;
-  let note: Note.note = {offset: i};
+  let note: Note.note = RelativeNotesState.loopOctaves({offset: i});
   <RelativeNoteComponent
     current
     acceptEvent=dispatch
@@ -26,8 +26,7 @@ let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.co
   styleBaseName: "relativeNotes",
   componentBaseName: "relativeNotes",
   itemSelectedDispatch: i => {
-    let note: Note.note = {offset: i};
-    dispatch(NoteTrigger(NoteClick(note, MouseClick)));
+    dispatch(NoteTrigger(NoteClick({offset: i}, MouseClick)));
   },
   itemsWindow: RangeOfInt.make((-12) * 2, 12 * 2),
   maxJump: 12,

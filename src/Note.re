@@ -86,13 +86,11 @@ type interval = {steps: int};
 // https://www.wikiwand.com/en/Scientific_pitch_notation
 type octave = {number: int}
 
+let middleCOctave: octave = {number: 4} // aka one lined
+
 let octaveOfNote = (note: note): octave => {
-  let shiftedBy0Octave = note.offset + 12 * 4
-  if (shiftedBy0Octave < 0) {
-    {number: shiftedBy0Octave / 12 - 1}
-  } else {
-    {number: shiftedBy0Octave / 12}
-  }
+  let shiftedBy0Octave = note.offset + middleCOctave.number * 12;
+  {number: MathUtil.flooredDivision(shiftedBy0Octave, 12)}
 }
 
 let subscriptOfOctave = (octave: octave): string => {
@@ -115,15 +113,33 @@ let middleC: note = {offset: 0};
 
 let cMajorName: scaleName = {noteName: C, scaleClass: Major};
 
-let moduloOffset = (n: note): int =>
-  if (n.offset < 0) {
-    11 - (- n.offset - 1) mod 12;
-  } else {
-    n.offset mod 12;
-  };
+let oneLinedNoteOfNote = (n: note): note => {
+  {offset: MathUtil.flooredDivisionRemainder(n.offset, 12)}
+}
+
+let oneLinedNoteOfChromaticNote = (n: chromaticNote): note => {
+  switch (n) {
+  | C => {offset: 0}
+  | CSharpDFlat => {offset: 1}
+  | D => {offset: 2}
+  | DSharpEFlat => {offset: 3}
+  | E => {offset: 4}
+  | F => {offset: 5}
+  | FSharpGFlat => {offset: 6}
+  | G => {offset: 7}
+  | GSharpAFlat => {offset: 8}
+  | A => {offset: 9}
+  | ASharpBFlat => {offset: 10}
+  | B => {offset: 11}
+  }
+}
+
+let noteOfOctaveAndChromaticNote = (o: octave, n: chromaticNote): note => {
+  {offset: (o.number - middleCOctave.number) * 12 + oneLinedNoteOfChromaticNote(n).offset}
+}
 
 let asChromaticNote = (n: note): chromaticNote => {
-  switch (moduloOffset(n)) {
+  switch (oneLinedNoteOfNote(n).offset) {
   | 0 => C
   | 1 => CSharpDFlat
   | 2 => D
@@ -177,10 +193,6 @@ let scaleIntervals = (s: scaleClass): list(interval) => {
 let noteApplyInterval = (n: note, i: interval): note => {
   offset: n.offset + i.steps,
 };
-
-//let noteApplyIntervalWithLooping = (n: note, i: interval): note => {
-//  offset: n.offset + i.steps,
-//};
 
 let scale = (rootNote: note, s: scaleClass): list(note) => {
   let intervals = scaleIntervals(s);

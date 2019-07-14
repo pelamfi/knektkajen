@@ -56,9 +56,9 @@ let playVoice = (synths: list(synth), voice: RelativeNotesState.voice): unit => 
     }
     switch(voice.key, voice.state) {
         | (Single(note), AttackRelease) =>
-        triggerAttackRelease(synth, Note.frequency(note))
+        triggerAttackRelease(synth, Note.frequency(RelativeNotesState.loopOctaves(note)))
         | (Single(note), Attack) =>
-        triggerAttack(synth, Note.frequency(note))
+        triggerAttack(synth, Note.frequency(RelativeNotesState.loopOctaves(note)))
         | _ => ()
     }
 }

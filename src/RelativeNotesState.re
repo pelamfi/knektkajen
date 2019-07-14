@@ -44,9 +44,19 @@ type state = {
   lastUpdate: list(stateChange)
 };
 
-
-
 type acceptEvent = event => unit;
+
+let minOctave: octave = {number: 1} // A 55 hz
+let maxOctave: octave = {number: 8}
+let minNote: note = noteOfOctaveAndChromaticNote(minOctave, C)
+let maxNote: note = noteOfOctaveAndChromaticNote(maxOctave, B)
+let numberOfNotes: int = (maxNote.offset - minNote.offset) + 1
+
+let loopOctaves = (n: note): note => {
+  let loopedOffset = MathUtil.flooredDivisionRemainder(n.offset - minNote.offset, numberOfNotes) + minNote.offset;
+  // Js.log(Printf.sprintf("n.offset:%d minNote.offset:%d numberOfNotes:%d loopedOffset: %d", n.offset, minNote.offset, numberOfNotes, loopedOffset));
+  {offset: loopedOffset}
+}
 
 let idleVoice = (voiceNumber: int): voice => {
    {key: Single(Note.middleC), updateIndex: 0, triggerId: Idle, state: Idle, prevState: Idle, allocated: voiceNumber}
