@@ -72,15 +72,6 @@ let emit = (state: state, stateChange: stateChange) => {
   Belt.List.forEach(state.listeners, listener => listener(stateChange));
 };
 
-// https://stackoverflow.com/questions/49944067/join-array-of-strings
-let commaSeparated = (items: list(string)): string => {
-  switch(items) {
-    | [] => ""
-    | [single] =>  single
-    | [head, ...tail] => List.fold_left((a, b) => {a ++ ", " ++ b}, head, tail)
-  }
-}
-
 let stringOfVoiceKey = (voiceKey: voiceKey): string => {
   switch(voiceKey) {
     | Single(note) => "Single(" ++ Note.nameOfNoteInCMajor(note) ++ ")"
@@ -128,8 +119,8 @@ let stringOfStateChange = (stateChange: stateChange): string => {
 let stringOfState = (state: state): string => {
   Printf.sprintf("[currentNote: %s, updateIndex:%d, voices: [%s], lastUpdate: [%s]]", 
     Note.nameOfNoteInCMajor(state.currentNote), state.updateIndex,
-    List.map(stringOfVoice, state.voices) |> commaSeparated,
-    List.map(stringOfStateChange, state.lastUpdate) |> commaSeparated)
+    List.map(stringOfVoice, state.voices) |> StringUtil.commaSeparated,
+    List.map(stringOfStateChange, state.lastUpdate) |> StringUtil.commaSeparated)
 }
 
 let stringOfEvent = (event: event): string => {
