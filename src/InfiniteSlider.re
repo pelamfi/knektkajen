@@ -99,16 +99,16 @@ let id_for_string = (config: config, s: string): string => {
 type limitedAnimationSteps = {
   itemStep: int,
   overflowToIndex: option(int),
-  toIndexOrig: int
+  toIndex: int
 };
 
 let limitAnimationSteps = (toIndex: int, fromIndex: int): limitedAnimationSteps => {
   let itemStep: int = toIndex - fromIndex;
   if (Js.Math.abs_int(itemStep) > 8) {
     let itemStepLimited = 8 * Js.Math.sign_int(itemStep);
-    {itemStep: itemStepLimited, overflowToIndex: Some(toIndex), toIndexOrig: toIndex}
+    {itemStep: itemStepLimited, overflowToIndex: Some(toIndex), toIndex: fromIndex + itemStepLimited}
   } else {
-    {itemStep: itemStep, overflowToIndex: None, toIndexOrig: toIndex}
+    {itemStep: itemStep, overflowToIndex: None, toIndex: toIndex}
   }
 }
 
@@ -138,42 +138,36 @@ let switchAnimation =
       );
     };
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
-  
-  let nextItemStepOrig: int = queuedAnimationToIndexOrig - fromIndexNew;
-  let (nextItemStep, queuedOverflow, queuedAnimationToIndex) = if (Js.Math.abs_int(nextItemStepOrig) > 8) {
-    let limited = 8 * Js.Math.sign_int(nextItemStepOrig);
-    (limited, Some(queuedAnimationToIndexOrig), fromIndexNew + limited)
-  } else {
-    (nextItemStepOrig, None, queuedAnimationToIndexOrig)
-  }
+
+  let limited = limitAnimationSteps(queuedAnimationToIndexOrig, fromIndexNew);
   // Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
   // Js.log( "switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " nextItemStep:" ++ string_of_int(nextItemStep) ++ " queuedAnimationToIndex: "++ string_of_int(queuedAnimationToIndex));
   if (prevPaddingState.t >= 1.0) {
     // Js.log("PREVIOUS ANIMATION COMPLETE");
     (
       0.0,
-      {fromIndex: prevAnimation.toIndex, toIndex: queuedAnimationToIndex},
-      None,
+      {fromIndex: prevAnimation.toIndex, toIndex: limited.toIndex},
+      limited.overflowToIndex,
     );
-  } else if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(nextItemStep)) {
+  } else if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(limited.itemStep)) {
     if (prevItemStep < 0) {
       // going left
-      let tSwitched = tInsideItem /. float_of_int(- nextItemStep + 1);
+      let tSwitched = tInsideItem /. float_of_int(- limited.itemStep + 1);
       let nextAnimation = {
         fromIndex: fromIndexNew + 1,
-        toIndex: queuedAnimationToIndex,
+        toIndex: limited.toIndex,
       };
       // Js.log( "NORMAL LEFT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
-      (tSwitched, nextAnimation, queuedOverflow);
+      (tSwitched, nextAnimation, limited.overflowToIndex);
     } else {
       // going right. Very simple, just scale the tInsideItem to the next animation
-      let tSwitched = tInsideItem /. float_of_int(nextItemStep);
+      let tSwitched = tInsideItem /. float_of_int(limited.itemStep);
       let nextAnimation = {
         fromIndex: fromIndexNew,
-        toIndex: queuedAnimationToIndex,
+        toIndex: limited.toIndex,
       };
       // Js.log( "NORMAL RIGHT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
-      (tSwitched, nextAnimation, queuedOverflow);
+      (tSwitched, nextAnimation, limited.overflowToIndex);
     };
   } else if
     // We are changing direction. Insert a "shim" animation to change direction and go back as far
