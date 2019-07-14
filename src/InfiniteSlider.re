@@ -96,11 +96,27 @@ let id_for_string = (config: config, s: string): string => {
   "inf-slider-" ++ config.componentBaseName ++ "-" ++ s;
 };
 
+type limitedAnimationSteps = {
+  itemStep: int,
+  overflowToIndex: option(int),
+  toIndexOrig: int
+};
+
+let limitAnimationSteps = (toIndex: int, fromIndex: int): limitedAnimationSteps => {
+  let itemStep: int = toIndex - fromIndex;
+  if (Js.Math.abs_int(itemStep) > 8) {
+    let itemStepLimited = 8 * Js.Math.sign_int(itemStep);
+    {itemStep: itemStepLimited, overflowToIndex: Some(toIndex), toIndexOrig: toIndex}
+  } else {
+    {itemStep: itemStep, overflowToIndex: None, toIndexOrig: toIndex}
+  }
+}
+
 let switchAnimation =
     (
       prevPaddingState: InfiniteSliderPadding.animationState,
       prevAnimation: animation,
-      queuedAnimationToIndex: int,
+      queuedAnimationToIndexOrig: int,
     )
     : (float, animation, option(int)) => {
   let prevItemStep = prevAnimation.toIndex - prevAnimation.fromIndex;
@@ -122,7 +138,14 @@ let switchAnimation =
       );
     };
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
-  let nextItemStep: int = queuedAnimationToIndex - fromIndexNew;
+  
+  let nextItemStepOrig: int = queuedAnimationToIndexOrig - fromIndexNew;
+  let (nextItemStep, queuedOverflow, queuedAnimationToIndex) = if (Js.Math.abs_int(nextItemStepOrig) > 8) {
+    let limited = 8 * Js.Math.sign_int(nextItemStepOrig);
+    (limited, Some(queuedAnimationToIndexOrig), fromIndexNew + limited)
+  } else {
+    (nextItemStepOrig, None, queuedAnimationToIndexOrig)
+  }
   // Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
   // Js.log( "switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " nextItemStep:" ++ string_of_int(nextItemStep) ++ " queuedAnimationToIndex: "++ string_of_int(queuedAnimationToIndex));
   if (prevPaddingState.t >= 1.0) {
@@ -141,7 +164,7 @@ let switchAnimation =
         toIndex: queuedAnimationToIndex,
       };
       // Js.log( "NORMAL LEFT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
-      (tSwitched, nextAnimation, None);
+      (tSwitched, nextAnimation, queuedOverflow);
     } else {
       // going right. Very simple, just scale the tInsideItem to the next animation
       let tSwitched = tInsideItem /. float_of_int(nextItemStep);
@@ -150,23 +173,23 @@ let switchAnimation =
         toIndex: queuedAnimationToIndex,
       };
       // Js.log( "NORMAL RIGHT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
-      (tSwitched, nextAnimation, None);
+      (tSwitched, nextAnimation, queuedOverflow);
     };
   } else if
     // We are changing direction. Insert a "shim" animation to change direction and go back as far
     // as current item has not completely been animated
-    (prevAnimation.toIndex > queuedAnimationToIndex) {
+    (prevAnimation.toIndex > queuedAnimationToIndexOrig) {
     // was going right, now going left
     let tNextAnimation = 1.0 -. tInsideItem;
     let nextAnimation = {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew};
     // Js.log( "GOING RIGHT TO GOING LEFT " n++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
-    (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex));
+    (tNextAnimation, nextAnimation, Some(queuedAnimationToIndexOrig));
   } else {
     // was going left, now going right, back right "back" to next element on right
     let nextAnimation = {fromIndex: fromIndexNew, toIndex: fromIndexNew + 1};
     let tNextAnimation = 1.0 -. tInsideItem;
     // Js.log("GOING LEFT TO GOING RIGHT " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:"w ++ Js.Float.toString(tNextAnimation));
-    (tNextAnimation, nextAnimation, Some(queuedAnimationToIndex));
+    (tNextAnimation, nextAnimation, Some(queuedAnimationToIndexOrig));
   };
 };
 
