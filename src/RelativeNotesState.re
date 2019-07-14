@@ -14,6 +14,8 @@ type trigger =
   | IntervalAttack(interval, triggerId)
   | Release(triggerId)
   | NoteClick(note, triggerId)
+  | ChordPrime(interval, triggerId)
+  | ChordRelease(triggerId)
   | IntervalClick(interval, triggerId);
 
 type voiceState =
@@ -23,6 +25,8 @@ type voiceState =
   | Release;
 
 type voice = {key: voiceKey, updateIndex: int, triggerId, state: voiceState, prevState: voiceState, allocated: int};
+
+type chordInterval  = {interval: interval, tiggerId: triggerId}
 
 type stateChange =
   | CurrentNoteChanged(note)
@@ -37,7 +41,7 @@ type event =
 
 type state = {
   currentNote: note,
-  chord: list(interval),
+  chordIntervals: list(chordInterval),
   updateIndex: int,
   voices: list(voice),
   listeners: list(stateChange => unit),
@@ -66,7 +70,7 @@ let voices = 6
 
 let initialVoices = RangeOfInt.make(0, voices) |> RangeOfInt.map(_, idleVoice)
 
-let initialState: state = {currentNote: middleC, chord: [], updateIndex: 0, voices: initialVoices, listeners: [], lastUpdate: []};
+let initialState: state = {currentNote: middleC, chordIntervals: [], updateIndex: 0, voices: initialVoices, listeners: [], lastUpdate: []};
 
 let emit = (state: state, stateChange: stateChange) => {
   Belt.List.forEach(state.listeners, listener => listener(stateChange));
@@ -101,6 +105,8 @@ let stringOfTrigger = (trigger: trigger): string => {
     | Release(triggerId) => "IntervalRelease(" ++ stringOfTriggerId(triggerId) ++ ")"
     | NoteClick(note, triggerId) => "NoteClick(" ++ Note.nameOfNoteInCMajor(note) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
     | IntervalClick(interval, triggerId) => "IntervalClick(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
+    | ChordPrime(interval, triggerId) => "ChordPrime(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
+    | ChordRelease(triggerId) => "ChordRelease(" ++ stringOfTriggerId(triggerId) ++ ")"
   }
 }
 
@@ -242,6 +248,10 @@ let updateState = (prevState: state, event: event): state => {
         | (_, _) =>
         state
       }
+    | NoteTrigger(ChordPrime(interval, triggerId)) =>
+      state
+    | NoteTrigger(ChordRelease(triggerId)) =>
+      state
     | RegisterListener(listener) => {
         ...state,
         listeners: [listener, ...state.listeners],
