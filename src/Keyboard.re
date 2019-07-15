@@ -6,6 +6,34 @@ type intervalKeyBinding = {
   interval: Note.interval,
 };
 
+let chordKeyBindings: list(intervalKeyBinding) =
+  [
+    "KeyA",
+    "KeyS",
+    "KeyD",
+    "KeyF",
+    "KeyG",
+    "KeyH",
+    "KeyJ",
+    "KeyK",
+    "KeyL",
+    "Semicolon",
+    "Quote",
+    "Enter",
+  ]
+  |> List.mapWithIndex(_, (index: int, keyCode: string) =>
+       (
+         {
+           {
+             keyCode,
+             interval: {
+               steps: index + 1,
+             },
+           };
+         }: intervalKeyBinding
+       )
+     );
+
 let intervalKeyBindingsForward: list(intervalKeyBinding) =
   [
     "Digit1",
@@ -84,12 +112,21 @@ let noteTriggerForKeyboardEvent = (event: Dom.keyboardEvent, ~keyUp: bool): opti
       )
       |> Option.map(_, binding => invert(shift, binding.interval));
 
-      switch(interval, keyUp) {
-        | (Some(_), true) =>
+      let chordInterval = List.getBy(chordKeyBindings, keyBinding =>
+        keyBinding.keyCode == code
+      )
+      |> Option.map(_, binding => binding.interval);
+
+      switch(interval, chordInterval, keyUp) {
+        | (Some(_), None, true) =>
           Some(Release(Keyboard(code)))
-        | (Some(interval), false) =>
+        | (None, Some(_), true) =>
+          Some(ChordRelease(Keyboard(code)))
+        | (Some(interval), None, false) =>
           Some(IntervalAttack(interval, Keyboard(code)))
-        | (None, _) => None
+        | (None, Some(chordInterval), false) =>
+          Some(ChordPrime(chordInterval, Keyboard(code)))
+        | (_, _, _) => None
       }
     }
 }
