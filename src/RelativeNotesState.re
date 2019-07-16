@@ -187,16 +187,34 @@ let triggerNote = (note: note, triggerId: triggerId, state: state): state => {
 }
 
 let releaseNote = (triggerId: triggerId, state: state): state => {
-  switch (Belt.List.partition(state.voices, voice => {voice.triggerId == triggerId})) {
-    | ([previous], others) =>
-      let updatedVoice: voice = {...previous, updateIndex: state.updateIndex, triggerId: Idle, state: Release, prevState: previous.state};
-      {...state, 
-        voices: [updatedVoice, ...others],
-        lastUpdate: [Voice(updatedVoice), ...state.lastUpdate]
-      }
-    | (_, _) =>
-      Js.log(Printf.sprintf("releaseNote: Unexpected voice trigger: state: %s", stringOfState(state)));
-      state
+  let (voicesToUpdate, otherVoices) = Belt.List.partition(state.voices, voice => {voice.triggerId == triggerId});
+
+  let updatedVoices = Belt.List.map(voicesToUpdate, voice => {
+    {...voice, updateIndex: state.updateIndex, triggerId: Idle, state: Release, prevState: voice.state}
+    }
+  );
+  
+  let voiceUpdates = Belt.List.map(updatedVoices, voice => {Voice(voice)})
+
+  let voices = Belt.List.concat(otherVoices, updatedVoices); // put ended voices at end of list so they get reused first
+
+  {...state, 
+    voices,
+    lastUpdate: Belt.List.concat(voiceUpdates, state.lastUpdate)
+  }
+}
+
+let addVoiceUpdates = (state: state): state => {
+  let voiceUpdates: list(stateChange) = Belt.List.keepMap(state.voices, voice => {
+    if (state.updateIndex == voice.updateIndex) {
+      Some(Voice(voice))
+    } else {
+      None
+    }
+  });
+
+  {...state, 
+    lastUpdate: Belt.List.concat(voiceUpdates, state.lastUpdate)
   }
 }
 
