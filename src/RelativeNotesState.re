@@ -26,7 +26,7 @@ type voiceState =
 
 type voice = {key: voiceKey, updateIndex: int, triggerId, state: voiceState, prevState: voiceState, allocated: int};
 
-type chordInterval  = {interval: interval, tiggerId: triggerId}
+type chordInterval  = {interval: interval, triggerId: triggerId}
 
 type stateChange =
   | CurrentNoteChanged(note)
@@ -207,6 +207,14 @@ let handleSingleShotNote = (state: state, note: note, triggerId: triggerId): sta
   }
 }
 
+let attackChordItervalVoices = (state: state, note: note): state => {
+  state
+}
+
+let releaseChordItervalVoices = (state: state, note: note): state => {
+  state
+}
+
 let noteOfVoice = (voice: voice): note => {
   switch(voice.key) {
     | Single(note) =>  note
@@ -218,6 +226,20 @@ let isVoicePlaying = (voice: voice): bool => {
     | Attack => true // TODO: Track whether single shots should be playing or not... or manage them with own timers
     | _ => false
   }
+}
+
+let releaseRemovedChordIntervals = (state: state): state => {
+  state
+}
+
+let attackAddedChordIntervals = (state: state): state => {
+  state
+}
+
+let handleChordIntervalsChange = (state: state): state => {
+  state 
+  |> releaseRemovedChordIntervals 
+  |> attackAddedChordIntervals
 }
 
 let updateState = (prevState: state, event: event): state => {
@@ -249,7 +271,13 @@ let updateState = (prevState: state, event: event): state => {
         state
       }
     | NoteTrigger(ChordPrime(interval, triggerId)) =>
-      state
+      let stateWithChordIntervalAdded = {
+        ...state,
+        chordIntervals: [{interval, triggerId}, ...state.chordIntervals]
+      }
+
+      handleChordIntervalsChange(stateWithChordIntervalAdded)
+
     | NoteTrigger(ChordRelease(triggerId)) =>
       state
     | RegisterListener(listener) => {
