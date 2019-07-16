@@ -204,20 +204,6 @@ let releaseNote = (triggerId: triggerId, state: state): state => {
   }
 }
 
-let addVoiceUpdates = (state: state): state => {
-  let voiceUpdates: list(stateChange) = Belt.List.keepMap(state.voices, voice => {
-    if (state.updateIndex == voice.updateIndex) {
-      Some(Voice(voice))
-    } else {
-      None
-    }
-  });
-
-  {...state, 
-    lastUpdate: Belt.List.concat(voiceUpdates, state.lastUpdate)
-  }
-}
-
 let handleSingleShotNote = (state: state, note: note, triggerId: triggerId): state => {
   switch (triggerClickVoice(state, note, triggerId)) {
     | (Some(updatedVoice), otherVoices) =>
