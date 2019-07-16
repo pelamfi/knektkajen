@@ -97,6 +97,7 @@ let stringOfTriggerId = (triggerId: triggerId): string => {
     | Idle => "NotTriggered"
     | MouseClick => "MouseClick"
     | Keyboard(id) => "Keyboard(" ++ id ++")"
+    | ChordInterval(interval) => "ChordInterval(" ++ string_of_int(interval.steps) ++")"
   }
 }
 
@@ -110,7 +111,6 @@ let stringOfTrigger = (trigger: trigger): string => {
     | ChordRelease(triggerId) => "ChordRelease(" ++ stringOfTriggerId(triggerId) ++ ")"
   }
 }
-
 
 let stringOfVoice = (voice: voice): string => {
   Printf.sprintf("[%s, state: %s, triggerId: %s]", stringOfVoiceKey(voice.key), stringOfVoiceState(voice.state), stringOfTriggerId(voice.triggerId))
@@ -169,7 +169,7 @@ let triggerClickVoice = (state: state, note: note, triggerId: triggerId): (optio
   switch (matchingVoiceOrLRU((voice) => {voice.key == Single(note)}, state)) {
     | (Some(previous), others) => // should only be 1 matching
     (Some({...previous, key: Single(note), updateIndex: state.updateIndex, triggerId, state: AttackRelease, prevState: previous.state}), others)
-    | (None, others) =>
+    | (None, _) =>
     Js.log("triggerClickVoice: no voices?");
     (None, state.voices)
   }
@@ -180,19 +180,23 @@ let triggerNote = (note: note, triggerId: triggerId, state: state): state => {
     | (Some(previous), others) => // should only be 1 matching
     let newVoice: voice = {...previous, key: Single(note), updateIndex: state.updateIndex, triggerId, state: Attack, prevState: previous.state};
     {...state, voices: [newVoice, ...others], lastUpdate: [Voice(newVoice), ...state.lastUpdate]}
-    | (None, others) =>
+    | (None, _) =>
     Js.log("triggerNote: no voices available?");
     state
   }
 }
 
-let triggerIntervalKeyUpVoice = (state: state, triggerId): (option(voice), list(voice)) => {
+let releaseNote = (triggerId: triggerId, state: state): state => {
   switch (Belt.List.partition(state.voices, voice => {voice.triggerId == triggerId})) {
     | ([previous], others) =>
-      (Some({...previous, updateIndex: state.updateIndex, triggerId: Idle, state: Release, prevState: previous.state}), others)
+      let updatedVoice: voice = {...previous, updateIndex: state.updateIndex, triggerId: Idle, state: Release, prevState: previous.state};
+      {...state, 
+        voices: [updatedVoice, ...others],
+        lastUpdate: [Voice(updatedVoice), ...state.lastUpdate]
+      }
     | (_, _) =>
-      Js.log(Printf.sprintf("triggerIntervalKeyUpVoice: Unexpected voice trigger: state: %s", stringOfState(state)));
-      (None, state.voices)
+      Js.log(Printf.sprintf("releaseNote: Unexpected voice trigger: state: %s", stringOfState(state)));
+      state
   }
 }
 
@@ -251,6 +255,9 @@ let isVoicePlaying = (voice: voice): bool => {
 }
 
 let releaseRemovedChordIntervals = (state: state): state => {
+  let voices = Belt.List.map(state.voices, (voice: voice): voice => {
+    voice
+  })
   state
 }
 
@@ -270,7 +277,6 @@ let attackAddedChordIntervals = (state: state): state => {
       })
     | None => state
   }
-
 }
 
 let changeCurrentNote = (state: state, note: note): state => {
@@ -299,14 +305,7 @@ let updateState = (prevState: state, event: event): state => {
       state |> triggerNote(note, triggerId) 
         |> changeCurrentNote(_, note)
     | NoteTrigger(Release(triggerId)) =>
-      switch(triggerIntervalKeyUpVoice(state, triggerId)) {
-        | (Some(updatedVoice), otherVoices) =>
-            {...state, 
-            voices: [updatedVoice, ...otherVoices],
-            lastUpdate: [Voice(updatedVoice)]}
-        | (_, _) =>
-        state
-      }
+      releaseNote(triggerId, state)
     | NoteTrigger(ChordPrime(interval, triggerId)) =>
       let stateWithChordIntervalAdded = {
         ...state,
