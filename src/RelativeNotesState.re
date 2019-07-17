@@ -215,13 +215,17 @@ let handleSingleShotNote = (state: state, note: note, triggerId: triggerId): sta
   }
 }
 
-let attackChordItervalVoices = (state: state, note: note): state => {
-  //List.onstate.voices state.chordIntervals
-  state
+let attackChordItervalVoices = (note: note, state: state): state => {
+  Belt.List.reduce(state.chordIntervals, state, (state, chordInterval: chordInterval): state => {
+    let chordNote = Note.noteApplyInterval(note, chordInterval.interval)
+    triggerNote(chordNote, ChordInterval(chordInterval.interval), state)
+  })
 }
 
-let releaseChordItervalVoices = (state: state, note: note): state => {
-  state
+let releaseChordItervalVoices = (state: state): state => {
+  Belt.List.reduce(state.chordIntervals, state, (state, chordInterval: chordInterval): state => {
+    releaseNote(ChordInterval(chordInterval.interval), state)
+  })
 }
 
 let noteOfVoice = (voice: voice): note => {
@@ -231,8 +235,9 @@ let noteOfVoice = (voice: voice): note => {
 }
 
 let lastTriggeredReduce = (prev: option(voice), voice: voice): option(voice) => {
-  switch(voice.state) {
-    | Attack | AttackRelease => 
+  switch(voice.state, voice.triggerId) {
+    | (_, ChordInterval(_)) => prev
+    | (Attack, _) | (AttackRelease, _) => 
       switch(prev) {
         | Some(prev) =>
           if (prev.updateIndex > voice.updateIndex) {
@@ -306,10 +311,9 @@ let updateState = (prevState: state, event: event): state => {
       handleSingleShotNote(state, note, triggerId)
     | NoteTrigger(IntervalAttack(interval, triggerId)) =>
       let note = Note.noteApplyInterval(state.currentNote, interval);
-      state |> triggerNote(note, triggerId) 
-        |> changeCurrentNote(_, note)
+      state |> triggerNote(note, triggerId) |> changeCurrentNote(_, note) |> attackChordItervalVoices(note)
     | NoteTrigger(Release(triggerId)) =>
-      releaseNote(triggerId, state)
+      state |> releaseNote(triggerId) |> releaseChordItervalVoices
     | NoteTrigger(ChordPrime(interval, triggerId)) =>
       let stateWithChordIntervalAdded = {
         ...state,
