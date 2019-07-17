@@ -250,7 +250,6 @@ let lastTriggered = (voices: list(voice)): option(voice) => {
   Belt.List.reduce(voices, None, lastTriggeredReduce)
 }
 
-
 let isVoicePlaying = (voice: voice): bool => {
   switch(voice.state) {
     | Attack => true // TODO: Track whether single shots should be playing or not... or manage them with own timers
@@ -259,10 +258,17 @@ let isVoicePlaying = (voice: voice): bool => {
 }
 
 let releaseRemovedChordIntervals = (state: state): state => {
-  let voices = Belt.List.map(state.voices, (voice: voice): voice => {
-    voice
+  Belt.List.reduce(state.voices, state, (state, voice: voice): state => {
+    switch(voice.triggerId, voice.state) {
+    | (ChordInterval(interval), Attack) =>
+      if (Belt.List.every(state.chordIntervals, (chordInterval) => {chordInterval.interval != interval})) {
+        releaseNote(voice.triggerId, state)
+      } else {
+        state
+      }
+    | _ => state
+    }
   })
-  state
 }
 
 let attackAddedChordIntervals = (state: state): state => {
@@ -289,12 +295,6 @@ let changeCurrentNote = (state: state, note: note): state => {
    lastUpdate: [CurrentNoteChanged(note), ...state.lastUpdate]}
 }
 
-let handleChordIntervalsChange = (state: state): state => {
-  state 
-  |> releaseRemovedChordIntervals 
-  |> attackAddedChordIntervals
-}
-
 let updateState = (prevState: state, event: event): state => {
   let state = {...prevState, updateIndex: prevState.updateIndex + 1, lastUpdate: []};
 
@@ -316,10 +316,15 @@ let updateState = (prevState: state, event: event): state => {
         chordIntervals: [{interval, triggerId}, ...state.chordIntervals]
       }
 
-      handleChordIntervalsChange(stateWithChordIntervalAdded)
+      attackAddedChordIntervals(stateWithChordIntervalAdded)
 
     | NoteTrigger(ChordRelease(triggerId)) =>
-      state
+      let stateWithChordIntervalRemoved = {
+        ...state,
+        chordIntervals: Belt.List.keep(state.chordIntervals, chordInterval => {chordInterval.triggerId != triggerId})
+      }
+
+      releaseRemovedChordIntervals(stateWithChordIntervalRemoved)
     | RegisterListener(listener) => {
         ...state,
         listeners: [listener, ...state.listeners],
