@@ -123,11 +123,16 @@ let stringOfStateChange = (stateChange: stateChange): string => {
   }
 }
 
+let stringOfChordInterval = (chordInterval: chordInterval): string => {
+  Printf.sprintf("[%d, %s]", chordInterval.interval.steps, stringOfTriggerId(chordInterval.triggerId))
+}
+
 let stringOfState = (state: state): string => {
-  Printf.sprintf("[currentNote: %s, updateIndex:%d, voices: [%s], lastUpdate: [%s]]", 
+  Printf.sprintf("[currentNote: %s, updateIndex:%d, voices: [%s], lastUpdate: [%s], chordIntervals: [%s]", 
     Note.nameOfNoteInCMajor(state.currentNote), state.updateIndex,
     List.map(stringOfVoice, state.voices) |> StringUtil.commaSeparated,
-    List.map(stringOfStateChange, state.lastUpdate) |> StringUtil.commaSeparated)
+    List.map(stringOfStateChange, state.lastUpdate) |> StringUtil.commaSeparated,
+    List.map(stringOfChordInterval, state.chordIntervals) |> StringUtil.commaSeparated)
 }
 
 let stringOfEvent = (event: event): string => {
