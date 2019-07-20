@@ -5,19 +5,24 @@ open Note;
 type voiceKey =   
   | Single(note)
 
-type triggerId =
-  | Idle
+
+type externalTriggerId =
   | MouseClick
   | Keyboard(string)
-  | ChordInterval(interval)
+
+type triggerId =
+  | Idle
+  | DirectNote(externalTriggerId)
+  | ChordInterval(interval, externalTriggerId)
+  
 
 type trigger =
-  | IntervalAttack(interval, triggerId)
-  | Release(triggerId)
-  | NoteClick(note, triggerId)
-  | ChordPrime(interval, triggerId)
-  | ChordRelease(triggerId)
-  | IntervalClick(interval, triggerId);
+  | IntervalAttack(interval, externalTriggerId)
+  | Release(externalTriggerId)
+  | NoteClick(note, externalTriggerId)
+  | ChordPrime(interval, externalTriggerId)
+  | ChordRelease(externalTriggerId)
+  | IntervalClick(interval, externalTriggerId);
 
 type voiceState =
   | Idle
@@ -27,7 +32,7 @@ type voiceState =
 
 type voice = {key: voiceKey, updateIndex: int, triggerId, state: voiceState, prevState: voiceState, allocated: int};
 
-type chordInterval  = {interval: interval, triggerId: triggerId}
+type chordInterval  = {interval: interval, externalTriggerId: externalTriggerId}
 
 type stateChange =
   | CurrentNoteChanged(note)
@@ -92,23 +97,29 @@ let stringOfVoiceState = (voiceState: voiceState): string => {
   }
 }
 
+let stringOfExternalTriggerId = (externalTriggerId: externalTriggerId): string => {
+  switch(externalTriggerId) {
+    | MouseClick => "MouseClick"
+    | Keyboard(id) => "Keyboard(" ++ id ++")"
+  }
+}
+
 let stringOfTriggerId = (triggerId: triggerId): string => {
   switch(triggerId) {
     | Idle => "NotTriggered"
-    | MouseClick => "MouseClick"
-    | Keyboard(id) => "Keyboard(" ++ id ++")"
-    | ChordInterval(interval) => "ChordInterval(" ++ string_of_int(interval.steps) ++")"
+    | DirectNote(externalId) => "DirectNote(" ++ stringOfExternalTriggerId(externalId) ++ ")"
+    | ChordInterval(interval, externalId) => "ChordInterval(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfExternalTriggerId(externalId) ++ ")"
   }
 }
 
 let stringOfTrigger = (trigger: trigger): string => {
   switch(trigger) {
-    | IntervalAttack(interval, triggerId) => "IntervalAttack(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
-    | Release(triggerId) => "IntervalRelease(" ++ stringOfTriggerId(triggerId) ++ ")"
-    | NoteClick(note, triggerId) => "NoteClick(" ++ Note.nameOfNoteInCMajor(note) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
-    | IntervalClick(interval, triggerId) => "IntervalClick(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
-    | ChordPrime(interval, triggerId) => "ChordPrime(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfTriggerId(triggerId) ++ ")"
-    | ChordRelease(triggerId) => "ChordRelease(" ++ stringOfTriggerId(triggerId) ++ ")"
+    | IntervalAttack(interval, triggerId) => "IntervalAttack(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfExternalTriggerId(triggerId) ++ ")"
+    | Release(triggerId) => "IntervalRelease(" ++ stringOfExternalTriggerId(triggerId) ++ ")"
+    | NoteClick(note, triggerId) => "NoteClick(" ++ Note.nameOfNoteInCMajor(note) ++ ", " ++ stringOfExternalTriggerId(triggerId) ++ ")"
+    | IntervalClick(interval, triggerId) => "IntervalClick(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfExternalTriggerId(triggerId) ++ ")"
+    | ChordPrime(interval, triggerId) => "ChordPrime(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfExternalTriggerId(triggerId) ++ ")"
+    | ChordRelease(triggerId) => "ChordRelease(" ++ stringOfExternalTriggerId(triggerId) ++ ")"
   }
 }
 
@@ -124,7 +135,7 @@ let stringOfStateChange = (stateChange: stateChange): string => {
 }
 
 let stringOfChordInterval = (chordInterval: chordInterval): string => {
-  Printf.sprintf("[%d, %s]", chordInterval.interval.steps, stringOfTriggerId(chordInterval.triggerId))
+  Printf.sprintf("[%d, %s]", chordInterval.interval.steps, stringOfExternalTriggerId(chordInterval.externalTriggerId))
 }
 
 let stringOfState = (state: state): string => {
@@ -209,8 +220,8 @@ let releaseNote = (triggerId: triggerId, state: state): state => {
   }
 }
 
-let handleSingleShotNote = (state: state, note: note, triggerId: triggerId): state => {
-  switch (triggerClickVoice(state, note, triggerId)) {
+let handleSingleShotNote = (state: state, note: note, externalTriggerId: externalTriggerId): state => {
+  switch (triggerClickVoice(state, note, DirectNote(externalTriggerId))) {
     | (Some(updatedVoice), otherVoices) =>
       {...state, 
         currentNote: note, 
@@ -220,16 +231,16 @@ let handleSingleShotNote = (state: state, note: note, triggerId: triggerId): sta
   }
 }
 
-let attackChordItervalVoices = (note: note, state: state): state => {
+let attackChordItervalVoices = (externalTriggerId: externalTriggerId, note: note, state: state): state => {
   Belt.List.reduce(state.chordIntervals, state, (state, chordInterval: chordInterval): state => {
     let chordNote = Note.noteApplyInterval(note, chordInterval.interval)
-    triggerNote(chordNote, ChordInterval(chordInterval.interval), state)
+    triggerNote(chordNote, ChordInterval(chordInterval.interval, externalTriggerId), state)
   })
 }
 
-let releaseChordItervalVoices = (state: state): state => {
+let releaseChordIntervalVoices = (externalTriggerId: externalTriggerId, state: state): state => {
   Belt.List.reduce(state.chordIntervals, state, (state, chordInterval: chordInterval): state => {
-    releaseNote(ChordInterval(chordInterval.interval), state)
+    releaseNote(ChordInterval(chordInterval.interval, externalTriggerId), state)
   })
 }
 
@@ -256,8 +267,13 @@ let lastTriggeredReduce = (prev: option(voice), voice: voice): option(voice) => 
   }
 }
 
-let lastTriggered = (voices: list(voice)): option(voice) => {
-  Belt.List.reduce(voices, None, lastTriggeredReduce)
+let lastExternallyTriggered = (voices: list(voice)): option((voice, externalTriggerId)) => {
+  let voice = Belt.List.reduce(voices, None, lastTriggeredReduce);
+  switch(voice) {
+    | Some({triggerId: DirectNote(externalTriggerId)} as v) =>
+      Some((v, externalTriggerId))
+    | _ => None
+  }
 }
 
 let isVoicePlaying = (voice: voice): bool => {
@@ -270,7 +286,7 @@ let isVoicePlaying = (voice: voice): bool => {
 let releaseRemovedChordIntervals = (state: state): state => {
   Belt.List.reduce(state.voices, state, (state, voice: voice): state => {
     switch(voice.triggerId, voice.state) {
-    | (ChordInterval(interval), Attack) =>
+    | (ChordInterval(interval, _), Attack) =>
       if (Belt.List.every(state.chordIntervals, (chordInterval) => {chordInterval.interval != interval})) {
         releaseNote(voice.triggerId, state)
       } else {
@@ -282,16 +298,16 @@ let releaseRemovedChordIntervals = (state: state): state => {
 }
 
 let attackAddedChordIntervals = (state: state): state => {
-  switch(lastTriggered(state.voices)) {
-    | Some(rootVoice) =>
+  switch(lastExternallyTriggered(state.voices)) {
+    | Some((rootVoice, externalTriggerId)) =>
       let rootNote = noteOfVoice(rootVoice)
       Belt.List.reduce(state.chordIntervals, state, (state: state, chordInterval: chordInterval): state => {
-        let triggerId = ChordInterval(chordInterval.interval)
+        let triggerId = ChordInterval(chordInterval.interval, externalTriggerId)
         let note = Note.noteApplyInterval(rootNote, chordInterval.interval)
         switch(Belt.List.getBy(state.voices, (voice: voice): bool => {
           voice.triggerId == triggerId
         })) {
-          | Some(voice) => state // already playing
+          | Some(_) => state // already playing
           | None => triggerNote(note, triggerId, state)
         }
       })
@@ -310,27 +326,27 @@ let updateState = (prevState: state, event: event): state => {
 
   let newState: state =
     switch (event) {
-    | NoteTrigger(NoteClick(note, triggerId)) => handleSingleShotNote(state, note, triggerId)
+    | NoteTrigger(NoteClick(note, extTriggerId)) => handleSingleShotNote(state, note, extTriggerId)
     | NoteTrigger(IntervalClick(interval, triggerId)) =>
       let note  = Note.noteApplyInterval(state.currentNote, interval)
       handleSingleShotNote(state, note, triggerId)
-    | NoteTrigger(IntervalAttack(interval, triggerId)) =>
+    | NoteTrigger(IntervalAttack(interval, extTriggerId)) =>
       let note = Note.noteApplyInterval(state.currentNote, interval);
-      state |> triggerNote(note, triggerId) |> changeCurrentNote(_, note) |> attackChordItervalVoices(note)
-    | NoteTrigger(Release(triggerId)) =>
-      state |> releaseNote(triggerId) |> releaseChordItervalVoices
-    | NoteTrigger(ChordPrime(interval, triggerId)) =>
+      state |> triggerNote(note, DirectNote(extTriggerId)) |> changeCurrentNote(_, note) |> attackChordItervalVoices(extTriggerId, note)
+    | NoteTrigger(Release(extTriggerId)) =>
+      state |> releaseNote(DirectNote(extTriggerId)) |> releaseChordIntervalVoices(extTriggerId)
+    | NoteTrigger(ChordPrime(interval, externalTriggerId)) =>
       let stateWithChordIntervalAdded = {
         ...state,
-        chordIntervals: [{interval, triggerId}, ...state.chordIntervals]
+        chordIntervals: [{interval, externalTriggerId}, ...state.chordIntervals]
       }
 
       attackAddedChordIntervals(stateWithChordIntervalAdded)
 
-    | NoteTrigger(ChordRelease(triggerId)) =>
+    | NoteTrigger(ChordRelease(extTriggerId)) =>
       let stateWithChordIntervalRemoved = {
         ...state,
-        chordIntervals: Belt.List.keep(state.chordIntervals, chordInterval => {chordInterval.triggerId != triggerId})
+        chordIntervals: Belt.List.keep(state.chordIntervals, chordInterval => {chordInterval.externalTriggerId != extTriggerId})
       }
 
       releaseRemovedChordIntervals(stateWithChordIntervalRemoved)
