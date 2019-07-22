@@ -36,6 +36,7 @@ let chordKeyBindings: list(intervalKeyBinding) =
 
 let intervalKeyBindingsForward: list(intervalKeyBinding) =
   [
+    "Space",
     "Digit1",
     "Digit2",
     "Digit3",
@@ -85,7 +86,7 @@ let intervalKeyBindingsReverse: list(intervalKeyBinding) =
            {
              keyCode,
              interval: {
-               steps: -index,
+               steps: -index - 1,
              },
            };
          }: intervalKeyBinding
