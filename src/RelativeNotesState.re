@@ -63,7 +63,7 @@ let minNote: note = noteOfOctaveAndChromaticNote(minOctave, C)
 let maxNote: note = noteOfOctaveAndChromaticNote(maxOctave, B)
 let numberOfNotes: int = (maxNote.offset - minNote.offset) + 1
 let intervalStepsInUi: RangeOfInt.rangeOfInt = RangeOfInt.make((-12) * 2, 12 * 2)
-let intervalInUi: list(Note.interval) = intervalStepsInUi |> RangeOfInt.map(i => {steps: i})
+let intervalsInUi: list(Note.interval) = intervalStepsInUi |> RangeOfInt.map(i => {steps: i})
 
 let loopOctaves = (n: note): note => {
   let loopedOffset = MathUtil.flooredDivisionRemainder(n.offset - minNote.offset, numberOfNotes) + minNote.offset;

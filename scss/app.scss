@@ -98,7 +98,7 @@ body {
 // Clipping wrapper to get the mobile browser feel that it
 // does not need to enable extra scrolling to show the 
 // overflowing infinite scroll "buffer" elements.
-.infiniteSlider {
+.infiniteSlider, .intervalsRowWrapper {
     width: 100%;
     margin: 0;
     padding: 0;
@@ -112,7 +112,7 @@ body {
     margin: 0 !important;
 }
 
-.relativeNotesRow {
+.relativeNotesRow, .intervalsRow {
     @extend .grid-x;
     @extend .relative-notes-grid;
     margin-left: -45% !important;
@@ -120,28 +120,28 @@ body {
 }
 
 @media screen and (max-width: 1080px) {
-  .relativeNotesRow {
+  .relativeNotesRow, .intervalsRow {
     margin-left: -80% !important;
     margin-right: -80% !important;
   }
 }
 
 @media screen and (max-width: 800px) {
-  .relativeNotesRow {
+  .relativeNotesRow, .intervalsRow {
     margin-left: -120% !important;
     margin-right: -120% !important;
   }
 }
 
 @media screen and (max-width: 660px) {
-  .relativeNotesRow {
+  .relativeNotesRow, .intervalsRow {
     margin-left: -150% !important;
     margin-right: -150% !important;
   }
 }
 
 @media screen and (max-width: 550px) {
-  .relativeNotesRow {
+  .relativeNotesRow, .intervalsRow {
     margin-left: -200% !important;
     margin-right: -200% !important;
   }
@@ -153,6 +153,12 @@ body {
     @extend .callout;
     transition-property: background-color;
     transition-duration: 3s;
+}
+
+.intervalCell {
+    @extend .small-1;
+    @extend .cell;
+    @extend .callout;
 }
 
 .noteCell.current {
