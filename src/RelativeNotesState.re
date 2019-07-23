@@ -5,7 +5,6 @@ open Note;
 type voiceKey =   
   | Single(note)
 
-
 type externalTriggerId =
   | MouseClick
   | Toggle // no need to match key up / down for toggles
@@ -63,6 +62,8 @@ let maxOctave: octave = {number: 8}
 let minNote: note = noteOfOctaveAndChromaticNote(minOctave, C)
 let maxNote: note = noteOfOctaveAndChromaticNote(maxOctave, B)
 let numberOfNotes: int = (maxNote.offset - minNote.offset) + 1
+let intervalStepsInUi: RangeOfInt.rangeOfInt = RangeOfInt.make((-12) * 2, 12 * 2)
+let intervalInUi: list(Note.interval) = intervalStepsInUi |> RangeOfInt.map(i => {steps: i})
 
 let loopOctaves = (n: note): note => {
   let loopedOffset = MathUtil.flooredDivisionRemainder(n.offset - minNote.offset, numberOfNotes) + minNote.offset;
@@ -76,7 +77,7 @@ let idleVoice = (voiceNumber: int): voice => {
 
 let voices = 6
 
-let initialVoices = RangeOfInt.make(0, voices) |> RangeOfInt.map(_, idleVoice)
+let initialVoices = RangeOfInt.make(0, voices) |> RangeOfInt.map(idleVoice)
 
 let initialState: state = {currentNote: middleC, chordIntervals: [], updateIndex: 0, voices: initialVoices, listeners: [], lastUpdate: []};
 

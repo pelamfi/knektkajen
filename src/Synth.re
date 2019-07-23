@@ -72,7 +72,7 @@ let effect: ((RelativeNotesState.acceptEvent) => (unit => option(unit => unit)))
         | None =>
             // Webaudio can be initialized only after user input
             let tone = requireTone()
-            let synths: list(synth) = RangeOfInt.make(0, RelativeNotesState.voices) |> RangeOfInt.map(_, _ => makeSynth(tone));
+            let synths: list(synth) = RangeOfInt.make(0, RelativeNotesState.voices) |> RangeOfInt.map(_ => makeSynth(tone));
 
             synthsRef := Some(synths);
             playVoice(synths, voice);

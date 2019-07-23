@@ -175,7 +175,7 @@ let chromaticNoteNames: list(noteName) = [
 
 let range_of_int = (base: note, start: int, rangeEnd: int): list(note) => {
   RangeOfInt.make(start, rangeEnd)
-  |> RangeOfInt.map(_, x => {offset: base.offset + x});
+  |> RangeOfInt.map(x => {offset: base.offset + x});
 };
 
 let inverse = (i: interval): interval => {steps: i.steps * (-1)};

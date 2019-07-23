@@ -84,7 +84,7 @@ type config = {
   styleBaseName: string,
   componentBaseName: string,
   itemSelectedDispatch: int => unit,
-  itemsWindow: RangeOfInt.range_of_int, // current is at 0
+  itemsWindow: RangeOfInt.rangeOfInt, // current is at 0
   maxJump: int,
 };
 
@@ -238,7 +238,7 @@ let elems =
   | Idle =>
     let index = i => i + state.centered;
     config.itemsWindow
-    |> RangeOfInt.map(_, i =>
+    |> RangeOfInt.map(i =>
          config.componentFactory(
            index(i),
            state.selected,
@@ -257,8 +257,8 @@ let elems =
     let index = i => animation.fromIndex + i;
     let normalItems =
       config.itemsWindow
-      |> RangeOfInt.drop(_, replacedItems(animation))
-      |> RangeOfInt.map(_, i =>
+      |> RangeOfInt.drop(replacedItems(animation))
+      |> RangeOfInt.map(i =>
            config.componentFactory(
              index(i),
              state.selected,

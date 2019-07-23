@@ -1,8 +1,8 @@
 // Range with exclusive end
-type range_of_int =
+type rangeOfInt =
   | Range(int, int);
 
-let map = (r: range_of_int, f: int => 'a): list('a) => {
+let map = (f: int => 'a, r: rangeOfInt): list('a) => {
   switch (r) {
   | Range(first, afterLast) =>
     let count = afterLast - first;
@@ -11,12 +11,12 @@ let map = (r: range_of_int, f: int => 'a): list('a) => {
   };
 };
 
-let size = (r: range_of_int) => {
+let size = (r: rangeOfInt) => {
   let Range(left, right) = r;
   right - left;
 };
 
-let drop = (r: range_of_int, count: int): range_of_int => {
+let drop = (count: int, r: rangeOfInt): rangeOfInt => {
   let Range(left, right) = r;
   if (size(r) > count) {
     Range(left + count, right);
@@ -25,4 +25,4 @@ let drop = (r: range_of_int, count: int): range_of_int => {
   };
 };
 
-let make = (left: int, right: int): range_of_int => Range(left, right) /* let example: list(int) = Range(1, 10) |> map(_, i => i * 10*/;
+let make = (left: int, right: int): rangeOfInt => Range(left, right) /* let example: list(int) = make(1, 10) |> map(i => i * 10*/;
