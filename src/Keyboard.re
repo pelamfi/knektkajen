@@ -8,6 +8,32 @@ type intervalKeyBinding = {
 
 let chordKeyBindings: list(intervalKeyBinding) =
   [
+    "KeyZ",
+    "KeyX",
+    "KeyC",
+    "KeyV",
+    "KeyB",
+    "KeyN",
+    "KeyM",
+    "Comma",
+    "Period",
+    "Slash",
+  ]
+  |> List.mapWithIndex(_, (index: int, keyCode: string) =>
+       (
+         {
+           {
+             keyCode,
+             interval: {
+               steps: index + 1,
+             },
+           };
+         }: intervalKeyBinding
+       )
+     );
+
+let chordToggleKeyBindings: list(intervalKeyBinding) =
+  [
     "KeyA",
     "KeyS",
     "KeyD",
@@ -118,16 +144,23 @@ let noteTriggerForKeyboardEvent = (event: Dom.keyboardEvent, ~keyUp: bool): opti
       )
       |> Option.map(_, binding => binding.interval);
 
-      switch(interval, chordInterval, keyUp) {
-        | (Some(_), None, true) =>
+      let chordIntervalToggle = List.getBy(chordToggleKeyBindings, keyBinding =>
+        keyBinding.keyCode == code
+      )
+      |> Option.map(_, binding => binding.interval);
+
+      switch(interval, chordInterval, chordIntervalToggle, keyUp) {
+        | (Some(_), None, None, true) =>
           Some(Release(Keyboard(code)))
-        | (None, Some(_), true) =>
+        | (None, Some(_), None, true) =>
           Some(ChordRelease(Keyboard(code)))
-        | (Some(interval), None, false) =>
+        | (Some(interval), None, None, false) =>
           Some(IntervalAttack(interval, Keyboard(code)))
-        | (None, Some(chordInterval), false) =>
+        | (None, Some(chordInterval), None, false) =>
           Some(ChordPrime(chordInterval, Keyboard(code)))
-        | (_, _, _) => None
+        | (None, None, Some(chordInterval), false) =>
+          Some(ChordToggle(chordInterval))
+        | (_, _, _, _) => None
       }
     }
 }

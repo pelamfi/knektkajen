@@ -8,6 +8,7 @@ type voiceKey =
 
 type externalTriggerId =
   | MouseClick
+  | Toggle // no need to match key up / down for toggles
   | Keyboard(string)
 
 type triggerId =
@@ -22,6 +23,7 @@ type trigger =
   | NoteClick(note, externalTriggerId)
   | ChordPrime(interval, externalTriggerId)
   | ChordRelease(externalTriggerId)
+  | ChordToggle(interval)
   | IntervalClick(interval, externalTriggerId);
 
 type voiceState =
@@ -100,6 +102,7 @@ let stringOfVoiceState = (voiceState: voiceState): string => {
 let stringOfExternalTriggerId = (externalTriggerId: externalTriggerId): string => {
   switch(externalTriggerId) {
     | MouseClick => "MouseClick"
+    | Toggle => "Toggle"
     | Keyboard(id) => "Keyboard(" ++ id ++")"
   }
 }
@@ -120,6 +123,7 @@ let stringOfTrigger = (trigger: trigger): string => {
     | IntervalClick(interval, triggerId) => "IntervalClick(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfExternalTriggerId(triggerId) ++ ")"
     | ChordPrime(interval, triggerId) => "ChordPrime(" ++ string_of_int(interval.steps) ++ ", " ++ stringOfExternalTriggerId(triggerId) ++ ")"
     | ChordRelease(triggerId) => "ChordRelease(" ++ stringOfExternalTriggerId(triggerId) ++ ")"
+    | ChordToggle(interval) => "ChordToggle(" ++ string_of_int(interval.steps) ++ ")"
   }
 }
 
@@ -321,6 +325,16 @@ let changeCurrentNote = (state: state, note: note): state => {
    lastUpdate: [CurrentNoteChanged(note), ...state.lastUpdate]}
 }
 
+let toggleChordInterval = (interval: interval, state: state): state => {
+  let match = (chordInterval: chordInterval): bool => {chordInterval.interval == interval};
+  let notMatch = x => {!match(x)};
+  if (Belt.List.some(state.chordIntervals, match)) {
+    {...state, chordIntervals: Belt.List.keep(state.chordIntervals, notMatch)}
+  } else {
+    {...state, chordIntervals: [{interval, externalTriggerId: Toggle}, ...state.chordIntervals]}
+  }
+}
+
 let updateState = (prevState: state, event: event): state => {
   let state = {...prevState, updateIndex: prevState.updateIndex + 1, lastUpdate: []};
 
@@ -342,6 +356,12 @@ let updateState = (prevState: state, event: event): state => {
       }
 
       attackAddedChordIntervals(stateWithChordIntervalAdded)
+
+    | NoteTrigger(ChordToggle(interval)) =>
+      state 
+        |> toggleChordInterval(interval)
+        |> attackAddedChordIntervals
+        |> releaseRemovedChordIntervals
 
     | NoteTrigger(ChordRelease(extTriggerId)) =>
       let stateWithChordIntervalRemoved = {
