@@ -1,17 +1,16 @@
 @charset 'utf-8';
 
-// @import 'node_modules/foundation-sites/scss/settings/settings';
+// Each foundation sub component includes its own
+// settings with 'suffix !default'. Settings
+// values can be overridden by specifying them here
+
 @import 'foundation-sites/scss/foundation';
-//@import 'foundation-sites/foundation';
 
-// Include the foundation-everything mixin, with the flex grid:
-@include foundation-everything();
-
-// Include everything, with the old non flex grid (flex = false)
-// @include foundation-everything(false);
-
-// Uncomment this to _also_ include the old grid with the flex grid:
-@include foundation-grid;
+// incldue the foundation components we need
+@include foundation-global-styles;
+@include foundation-xy-grid-classes;
+@include foundation-typography;
+@include foundation-callout;
 
 //@import 'motion-ui';
 
