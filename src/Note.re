@@ -284,3 +284,7 @@ let frequency = (n: note): float => {
   // middle C is the 0, so shift by 9 half tones to A which is the nice round 440 hz
   Js.Math.pow_float(~base=2.0, ~exp=float(n.offset - 9) /. 12.0) *. 440.0;
 };
+
+let nameOfInterval = (interval: interval): string => {
+  "fifth"
+}
