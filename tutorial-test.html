@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+  </head>
+<body>
+   <div style="background-color: red;position: absolute; top: 30px;left: 30px; height: 300px;width: 600px;">
+     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec fermentum sagittis dui et commodo. Curabitur varius dolor vel augue suscipit, non viverra nibh sollicitudin. Aliquam pretium eros neque, in ultrices magna vehicula in. Morbi tempor congue blandit. Duis egestas sit amet urna sit amet volutpat. Curabitur et pellentesque magna, a pellentesque ex. Quisque pulvinar ut lectus aliquam viverra.
+     <p>
+     Suspendisse non dolor nec ex dapibus mollis a et arcu. Donec malesuada blandit vehicula. Nunc dignissim non nisl nec sagittis. Pellentesque eu metus ex. Fusce scelerisque leo id velit blandit, non mollis ligula commodo. Curabitur non odio vitae sapien euismod tempor eu et lectus. Ut sit amet velit eget libero euismod ornare in eu purus. Maecenas convallis massa in posuere ultrices. Etiam pellentesque ante at ligula rhoncus aliquam. Phasellus vestibulum libero quis augue varius aliquam. Etiam vitae ex quis ante pretium consequat in vel lacus. Nullam quis condimentum diam. Donec tempus mauris neque, a sollicitudin erat accumsan eget. Fusce tortor sapien, accumsan a tempor eu, rhoncus vitae nisi. Suspendisse at nibh iaculis massa cursus eleifend ac consequat nisl.
+   </div>
+   <canvas id="Canvas" width="640" height="480" style="position: absolute;"></canvas>
+   <script>
+     // https://stackoverflow.com/a/7838871/1148030  
+     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+       if (w < 2 * r) r = w / 2;
+       if (h < 2 * r) r = h / 2;
+       this.beginPath();
+       this.moveTo(x+r, y);
+       this.arcTo(x+w, y,   x+w, y+h, r);
+       this.arcTo(x+w, y+h, x,   y+h, r);
+       this.arcTo(x,   y+h, x,   y,   r);
+       this.arcTo(x,   y,   x+w, y,   r);
+       this.closePath();
+       return this;
+     }
+     
+     var canvas = document.getElementById('Canvas');
+     var context = canvas.getContext('2d');
+  
+     context.fillStyle = "rgba(0, 0, 0, 0.7)";
+     context.fillRect(0, 0, canvas.width, canvas.height);
+     
+     context.shadowBlur=15;
+     
+     context.shadowColor="rgba(0, 0, 0, 1)";
+     
+     context.fillStyle="rgba(0, 0, 0, 1)";
+
+     context.globalCompositeOperation = "destination-out";
+     
+     context.roundRect(90,60,140,80,200).fill();
+     context.roundRect(90,60,140,80,200).fill();
+     context.roundRect(90,60,140,80,200).fill();
+     
+  </script>    
+  </body>
+</html>                                                                                                        
