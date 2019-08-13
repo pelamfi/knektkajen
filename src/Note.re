@@ -286,5 +286,20 @@ let frequency = (n: note): float => {
 };
 
 let nameOfInterval = (interval: interval): string => {
-  "fifth"
+  switch(Js.Math.abs_int(interval.steps)) {
+    | 0 => "Perfect unison"
+    | 1 => "Minor second"
+    | 2 => "Minor second"
+    | 3 => "Minor third"
+    | 4 => "Major third"
+    | 5 => "Perfect fourth"
+    | 6 => "Dimished fifth"
+    | 7 => "Perfect fifth"
+    | 8 => "Minor sixth"
+    | 9 => "Major sixth"
+    | 10 => "Minor seventh"
+    | 11 => "Major seventh"
+    | 12 => "Perfect octave"
+    | _ => "Perfect octave"
+  }
 }
