@@ -300,6 +300,6 @@ let nameOfInterval = (interval: interval): string => {
     | 10 => "Minor seventh"
     | 11 => "Major seventh"
     | 12 => "Perfect octave"
-    | _ => "Perfect octave"
+    | _ => ""
   }
 }

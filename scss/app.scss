@@ -14,6 +14,13 @@
 
 //@import 'motion-ui';
 
+// https://stackoverflow.com/a/2416032/1148030
+.downwardsText {
+    -webkit-transform: rotate(90deg);  /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(90deg);  /* IE 9 */
+            transform: rotate(90deg);  /* Firefox 16+, IE 10+, Opera */
+}
+
 #app {
     @extend .grid-container;
 } 
@@ -158,6 +165,22 @@ body {
     @extend .small-1;
     @extend .cell;
     @extend .callout;
+}
+
+.intervalNameCell {
+    @extend .small-1;
+    @extend .cell;
+    @extend .callout;
+    align: left;
+    height: 10rem;
+}
+
+.intervalName {
+    width: 10rem;
+}
+
+.intervalNameRotate {
+    @extend .downwardsText;
 }
 
 .noteCell.current {

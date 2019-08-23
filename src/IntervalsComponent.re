@@ -7,7 +7,11 @@ let makeIntervalOffsetComponent = (acceptEvent: acceptEvent, interval: interval)
 };
 
 let makeIntervalNameComponent = (acceptEvent: acceptEvent, interval: interval): reactComponent => {
-  <div className="intervalCell" onClick={_ => acceptEvent(NoteTrigger(IntervalClick(interval, MouseClick)))}>{ReasonReact.string(Note.nameOfInterval(interval))}</div>
+  <div className="intervalNameCell" onClick={_ => acceptEvent(NoteTrigger(IntervalClick(interval, MouseClick)))}>
+  <div className="intervalNameRotate">
+  <div className="intervalName">
+  {ReasonReact.string(Note.nameOfInterval(interval))}
+  </div></div></div>
 };
 
 [@react.component]
