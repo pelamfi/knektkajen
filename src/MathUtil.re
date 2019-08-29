@@ -12,3 +12,13 @@ let flooredDivision = (a: int, b: int): int => {
     a / b
   }
 };
+
+let stringOfIntWithSign = (a: int): string => {
+  if (a < 0) {
+    string_of_int(a)
+  } else if (a > 0){
+    "+" ++ string_of_int(a)
+  } else {
+    "0"
+  }
+}

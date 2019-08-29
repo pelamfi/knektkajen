@@ -164,19 +164,28 @@ body {
 .intervalCell {
     @extend .small-1;
     @extend .cell;
-    @extend .callout;
+    //position: relative; //@extend .callout;
+    // padding: calc(1rem + 1px);
+    //padding: 1rem;
+    margin: 0 0 1rem 0; //0 0 1rem 0;
+    //border: 1px solid rgba($black, 0.25);
 }
 
+.intervalStepsCell {
+    @extend .intervalCell;
+    text-align: center;
+}
+
+$intervalNameMaxLength: 7rem;
+
 .intervalNameCell {
-    @extend .small-1;
-    @extend .cell;
-    @extend .callout;
+    @extend .intervalCell;
     align: left;
-    height: 10rem;
+    height: $intervalNameMaxLength;
 }
 
 .intervalName {
-    width: 10rem;
+    width: $intervalNameMaxLength;
 }
 
 .intervalNameRotate {
