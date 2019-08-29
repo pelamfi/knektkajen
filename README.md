@@ -58,16 +58,34 @@ If you make use of routing (via `ReasonReact.Router` or similar logic) ensure th
 **To enable dead code elimination**, change `bsconfig.json`'s `package-specs` `module` from `"commonjs"` to `"es6"`. Then re-run the above 2 commands. This will allow Webpack to remove unused code.
 
 ## Background
-
 I'm learning web technologies and playing with an idea of having a
-nice web based game to learn basic music theory.
+web based game to learn basic music theory or maybe just some kind of
+musical toy.
 
+### Various musical theoretical concepts with numerical values
+
+Following concepts could be considered roughly equivalent in some mathematical
+sense, but have different (although related) notations and conventions:
+
+  * Interval as a number of half steps (eg. +5 half steps)
+  * Note names as half steps in an octave (eg. F is 5 half steps above C)
+  * Interval names (eg. Perfect fourth is 5 half steps)
+  * Half steps between keys on a piano keyboard (eg. in ╿│C╿╿│F╿╿╿│ the F is 5 half steps above C )
+  * Vertical positions on musical scores 🎼
+    * In treble (G clef 𝄞)
+    * In bass (F clef 𝄢)
+    * in the presence of sharps ♯ and flats ♭
+  * Intervals as closest fractional frequency multipliers (eg. the Perfect fourth multiplies requency by about 4/3)
+  * Solfège syllables (fixed) (do, re, mi, fa, sol, la, si)
+  * Solfège syllables (movable) (do=0, re=+2, mi=+4, fa=+5, sol=+7, la=+9, ti=+11)
+
+### The idea about the game
 The ultimate goal of the game would be to in a fun and rewarding way teach the following:
-  * Read all kinds of musical notations
+  * Read several kinds of musical notations for intervals and notes
   * Do musical "calculations"
   * Translate between numerical representations of various music theoretical concepts
   * Visualize some concepts from music theory in the minds eye
-  * Do all the above  quickly and without using any tools or tables
+  * Do all the above quickly and without using any tools or tables
 
 I recognize that just one item from above list would be a worthy
 goal for a hobby / learning project, but I don't think it hurts to have
