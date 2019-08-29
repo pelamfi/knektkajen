@@ -3,11 +3,11 @@ open RelativeNotesState;
 open ReactUtil;
 
 let makeIntervalOffsetComponent = (acceptEvent: acceptEvent, interval: interval): reactComponent => {
-  <div className="intervalStepsCell" onClick={_ => acceptEvent(NoteTrigger(IntervalClick(interval, MouseClick)))}>{ReasonReact.string(MathUtil.stringOfIntWithSign(interval.steps))}</div>
+  <div className="intervalStepsCell" key={string_of_int(interval.steps)} onClick={_ => acceptEvent(NoteTrigger(IntervalClick(interval, MouseClick)))}>{ReasonReact.string(MathUtil.stringOfIntWithSign(interval.steps))}</div>
 };
 
 let makeIntervalNameComponent = (acceptEvent: acceptEvent, interval: interval): reactComponent => {
-  <div className="intervalNameCell" onClick={_ => acceptEvent(NoteTrigger(IntervalClick(interval, MouseClick)))}>
+  <div className="intervalNameCell" key={string_of_int(interval.steps)} onClick={_ => acceptEvent(NoteTrigger(IntervalClick(interval, MouseClick)))}>
   <div className="intervalNameRotate">
   <div className="intervalName">
   {ReasonReact.string(Note.nameOfInterval(interval))}
