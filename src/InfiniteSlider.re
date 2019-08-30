@@ -1,5 +1,4 @@
 open ReactUtil;
-open Belt.List;
 open Belt;
 open Webapi;
 
@@ -427,6 +426,7 @@ let make = (~config: config, ~selected: int) => {
     },
     ((), state.animationState),
   );
+
 
   let e: list(reactComponent) =
     elems(state, config, paddingAnimationState =>

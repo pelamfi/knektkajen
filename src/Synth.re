@@ -50,7 +50,7 @@ let playVoice = (synths: list(synth), voice: RelativeNotesState.voice): unit => 
     Js.log(Printf.sprintf("playVoice: allocated: %d, prevState: %s, state: %s", voice.allocated, RelativeNotesState.stringOfVoiceState(voice.prevState), RelativeNotesState.stringOfVoiceState(voice.state)))
 
     switch(voice.key, voice.state, voice.prevState) {
-        | (Single(note), _, Attack) =>
+        | (Single(_), _, Attack) =>
         triggerRelease(synth)
         | _ => ()
     }
