@@ -154,38 +154,30 @@ body {
 }
 
 .intervalInfoElementBox {
+    @extend .small-1;
+    @extend .cell;
     border: 1px solid rgba($black, 0.25);
+    margin: 0 0 1rem 0;
+    text-align: center;
 }
 
 .noteCell {
-    @extend .small-1;
-    @extend .cell;
     @extend .intervalInfoElementBox;
-    margin: 0 0 1rem 0;
     text-align: center;
     transition-property: background-color;
     transition-duration: 3s;
 }
 
 
-.intervalCell {
-    @extend .small-1;
-    @extend .cell;
-    @extend .intervalInfoElementBox;
-
-    margin: 0 0 1rem 0;
-}
-
 .intervalStepsCell {
-    @extend .intervalCell;
-    text-align: center;
+    @extend .intervalInfoElementBox;
 }
 
 $intervalNameMaxLength: 9rem;
 
 .intervalNameCell {
-    @extend .intervalCell;
-    align: left;
+    @extend .intervalInfoElementBox;
+    text-align: left;
     height: $intervalNameMaxLength;
 }
 
