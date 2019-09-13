@@ -153,22 +153,27 @@ body {
   }
 }
 
+.intervalInfoElementBox {
+    border: 1px solid rgba($black, 0.25);
+}
+
 .noteCell {
     @extend .small-1;
     @extend .cell;
-    @extend .callout;
+    @extend .intervalInfoElementBox;
+    margin: 0 0 1rem 0;
+    text-align: center;
     transition-property: background-color;
     transition-duration: 3s;
 }
 
+
 .intervalCell {
     @extend .small-1;
     @extend .cell;
-    //position: relative; //@extend .callout;
-    // padding: calc(1rem + 1px);
-    //padding: 1rem;
-    margin: 0 0 1rem 0; //0 0 1rem 0;
-    //border: 1px solid rgba($black, 0.25);
+    @extend .intervalInfoElementBox;
+
+    margin: 0 0 1rem 0;
 }
 
 .intervalStepsCell {
@@ -176,7 +181,7 @@ body {
     text-align: center;
 }
 
-$intervalNameMaxLength: 7rem;
+$intervalNameMaxLength: 9rem;
 
 .intervalNameCell {
     @extend .intervalCell;
@@ -185,6 +190,7 @@ $intervalNameMaxLength: 7rem;
 }
 
 .intervalName {
+    padding: 0 0 0 1rem;
     width: $intervalNameMaxLength;
 }
 
