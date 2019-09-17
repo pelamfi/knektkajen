@@ -16,6 +16,8 @@ let noteNameFactory = (dispatch: RelativeNotesState.acceptEvent, i: int, current
     current
     acceptEvent=dispatch
     key={string_of_int(note.offset)}
+    cssClass="noteNameCell"
+    renderContent=Note.nameOfNoteInCMajor
     id
     note
   />;

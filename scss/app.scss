@@ -161,13 +161,20 @@ body {
     text-align: center;
 }
 
-.noteCell {
+.noteNameCell {
     @extend .intervalInfoElementBox;
-    text-align: center;
+}
+
+.noteStepsCell {
+    @extend .intervalInfoElementBox;    
+}
+
+// Note names, note steps etc "moving" cells have this class also
+// to control animations
+.noteInfoCell {
     transition-property: background-color;
     transition-duration: 3s;
 }
-
 
 .intervalStepsCell {
     @extend .intervalInfoElementBox;
@@ -190,7 +197,7 @@ $intervalNameMaxLength: 9rem;
     @extend .downwardsText;
 }
 
-.noteCell.current {
+.noteInfoCell.current {
     background-color: #dd2785;
     transition-property: background-color;
     transition-duration: 0.1s;
