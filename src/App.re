@@ -21,5 +21,9 @@ let make = () => {
   <>
     <IntervalsComponent />
     <RelativeNotesComponent currentNote/>
+    <RelativeNotesComponent currentNote/>
+    <RelativeNotesComponent currentNote/>
+    <RelativeNotesComponent currentNote/>
+    
   </>;
 };
