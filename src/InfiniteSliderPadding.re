@@ -183,7 +183,7 @@ let requestCancellableAnimationFrame = (actionDispatch: actionDispatch): cancel 
   idCounter := id;
   Js.Array.push(mplexReq, dispatches) |> ignore;
   if (Js.Array.length(dispatches) == 1) {
-    //Js.log("bar "  ++ string_of_int(Js.Array.length(dispatches)) ++ " foo " ++ string_of_int(id))
+    // Js.log("bar "  ++ string_of_int(Js.Array.length(dispatches)) ++ " foo " ++ string_of_int(id))
 
     mplexRafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback));
     ()
@@ -191,10 +191,11 @@ let requestCancellableAnimationFrame = (actionDispatch: actionDispatch): cancel 
     ()
   };
   () => {
-    Js.Array2.indexOf(dispatches, mplexReq) |> Js.Array2.removeFromInPlace(dispatches, _) |> ignore
-    // Js.log("cancel "  ++ string_of_int(Js.Array.length(dispatches)))
+    // Js.log("cancel 1 "  ++ string_of_int(Js.Array.length(dispatches)))
+    Js.Array2.findIndex(dispatches, x => {mplexReq.id == x.id}) |> Js.Array2.removeCountInPlace(dispatches, _, 1) |> ignore
+    // Js.log("cancel 2 "  ++ string_of_int(Js.Array.length(dispatches)))
     if (Js.Array.length(dispatches) == 0) {
-      // Js.log("bar cancel "  ++ string_of_int(Js.Array.length(dispatches)))
+      // Js.log("cancel X "  ++ string_of_int(Js.Array.length(dispatches)))
       let id: option(Webapi.rafId) = mplexRafId^;
       id |> Option.map(_, Webapi.cancelAnimationFrame) |> ignore;
       mplexRafId := None;
