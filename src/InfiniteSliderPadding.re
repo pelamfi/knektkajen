@@ -160,7 +160,6 @@ let stateMachine = (state, event): state => {
 
 type effect = unit => option(effectCleanup);
 
-
 let commandEffect =
     (
       command: command,
@@ -198,7 +197,7 @@ let animatingEffect =
     : effect => {
   () => {
     if (isAnimating) {
-      Some(requestCancellableAnimationFrame(dispatch));
+      Some(GroupedRaf.register((timerMs: float) => {dispatch(Frame(timerMs))}));
     } else {
       None
     };

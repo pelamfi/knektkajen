@@ -1,12 +1,13 @@
-open Belt;
-open Js.Array;
+open Belt
+open Js.Array2
 
 // Do just 1 requestAnimationFrame callback and call all registered functions in that.
 // The idea is to ensure that all components get their callbacks called or none.
 // This should help animations stay in sync.
 
+type callback = (float) => unit
 
-type mplexRequest = {id: int, actionDispatch: actionDispatch}
+type mplexRequest = {id: int, callback: callback}
 let dispatches: array(mplexRequest) = [||];
 
 type cancel = unit => unit;
@@ -17,24 +18,23 @@ let mplexRafId: ref(option(Webapi.rafId)) = ref(None);
 
 let rec rafCallback = (timerMs: float) => {
   mplexRafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback));
-  let message: event = Frame(timerMs)
-  Js.Array2.forEach(dispatches, dispatch => {dispatch.actionDispatch(message)})
+  forEach(dispatches, dispatch => {dispatch.callback(timerMs)})
 };
 
-let requestCancellableAnimationFrame = (actionDispatch: actionDispatch): cancel => {
+let register = (callback: callback): cancel => {
   let id = idCounter^ + 1
-  let mplexReq: mplexRequest = {id, actionDispatch}
+  let mplexReq: mplexRequest = {id, callback}
   idCounter := id;
-  Js.Array.push(mplexReq, dispatches) |> ignore;
-  if (Js.Array.length(dispatches) == 1) {
+  push(dispatches, mplexReq) |> ignore;
+  if (length(dispatches) == 1) {
     mplexRafId := Some(Webapi.requestCancellableAnimationFrame(rafCallback));
     ()
   } else {
     ()
   };
   () => {
-    Js.Array2.findIndex(dispatches, x => {mplexReq.id == x.id}) |> Js.Array2.removeCountInPlace(dispatches, _, 1) |> ignore
-    if (Js.Array.length(dispatches) == 0) {
+    findIndex(dispatches, x => {mplexReq.id == x.id}) |> Js.Array2.removeCountInPlace(dispatches, _, 1) |> ignore
+    if (length(dispatches) == 0) {
       let id: option(Webapi.rafId) = mplexRafId^;
       id |> Option.map(_, Webapi.cancelAnimationFrame) |> ignore;
       mplexRafId := None;
