@@ -23,7 +23,7 @@ let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.co
     dispatch(NoteTrigger(NoteClick({offset: i}, MouseClick)));
   },
   itemsWindow: RelativeNotesState.intervalStepsInUi,
-  maxJump: 12,
+  maxJump: 8,
 };
 
 [@react.component]

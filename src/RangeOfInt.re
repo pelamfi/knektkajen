@@ -21,8 +21,18 @@ let drop = (count: int, r: rangeOfInt): rangeOfInt => {
   if (size(r) > count) {
     Range(left + count, right);
   } else {
-    Range(left, right);
+    Range(right, right);
   };
 };
+
+let dropRight = (count: int, r: rangeOfInt): rangeOfInt => {
+  let Range(left, right) = r;
+  if (size(r) > count) {
+    Range(left, right - count);
+  } else {
+    Range(left, left);
+  };
+};
+
 
 let make = (left: int, right: int): rangeOfInt => Range(left, right) /* let example: list(int) = make(1, 10) |> map(i => i * 10*/;

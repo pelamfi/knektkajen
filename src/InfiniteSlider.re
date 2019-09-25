@@ -101,10 +101,11 @@ type limitedAnimationSteps = {
   toIndex: int
 };
 
-let limitAnimationSteps = (toIndex: int, fromIndex: int): limitedAnimationSteps => {
+let limitAnimationSteps = (toIndex: int, fromIndex: int, limit: int): limitedAnimationSteps => {
   let itemStep: int = toIndex - fromIndex;
-  if (Js.Math.abs_int(itemStep) > 8) {
-    let itemStepLimited = 8 * Js.Math.sign_int(itemStep);
+  Js.log("itemStep " ++ string_of_int(itemStep) ++ " " ++ string_of_int(limit))
+  if (Js.Math.abs_int(itemStep) > limit) {
+    let itemStepLimited = limit * Js.Math.sign_int(itemStep);
     {itemStep: itemStepLimited, overflowToIndex: Some(toIndex), toIndex: fromIndex + itemStepLimited}
   } else {
     {itemStep: itemStep, overflowToIndex: None, toIndex: toIndex}
@@ -113,6 +114,7 @@ let limitAnimationSteps = (toIndex: int, fromIndex: int): limitedAnimationSteps 
 
 let switchAnimation =
     (
+      config: config,
       prevPaddingState: InfiniteSliderPadding.animationState,
       prevAnimation: animation,
       queuedAnimationToIndexOrig: int,
@@ -138,8 +140,8 @@ let switchAnimation =
     };
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
 
-  let limited = limitAnimationSteps(queuedAnimationToIndexOrig, fromIndexNew);
-  // Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
+  let limited = limitAnimationSteps(queuedAnimationToIndexOrig, fromIndexNew, config.maxJump);
+  Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
   // Js.log( "switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " nextItemStep:" ++ string_of_int(nextItemStep) ++ " queuedAnimationToIndex: "++ string_of_int(queuedAnimationToIndex));
   if (prevPaddingState.t >= 1.0) {
     // Js.log("PREVIOUS ANIMATION COMPLETE");
@@ -257,6 +259,7 @@ let elems =
     let normalItems =
       config.itemsWindow
       |> RangeOfInt.drop(replacedItems(animation))
+      |> RangeOfInt.dropRight(max(0, config.maxJump - replacedItems(animation)))
       |> RangeOfInt.map(i =>
            config.componentFactory(
              index(i),
@@ -283,7 +286,7 @@ let getItemSlotPlacement =
   };
   Option.flatMap(left(id0), left0 =>
     Option.map(left(id1), left1 =>
-      {centeredLeftX: left0, width: left1 -. left0}
+      {centeredLeftX: left0, width: (left1 -. left0) *. 2.0}
     )
   );
 };
@@ -308,34 +311,44 @@ let handleClick =
   |> ignore;
 };
 
-let stateMachine = (state: state, action: event): state => {
+let switchedAnimationState = (
+  config: config, 
+  state: state,
+  prevPaddingAnimationState: InfiniteSliderPadding.animationState,
+  prevAnimation: animation,
+  queuedAnimationToIndex: int): state => {
+    let (tSwitched, switchedAnimation, queuedStill) =
+      switchAnimation(
+        config,
+        prevPaddingAnimationState,
+        prevAnimation,
+        queuedAnimationToIndex,
+      );
+    {
+      ...state,
+      queuedAnimation: queuedStill,
+      centered: switchedAnimation.fromIndex,
+      animationState: Animating(switchedAnimation),
+      paddingCommand:
+        Start({
+          ...
+            animationPaddingState(
+              prevPaddingAnimationState,
+              state.itemSlotPlacement,
+              switchedAnimation,
+            ),
+          tInitial: tSwitched,
+          t: tSwitched,
+        }),
+    };
+}  
+
+let stateMachine = (config: config, state: state, action: event): state => {
   switch (action, state.animationState) {
   | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
     switch (state.queuedAnimation) {
     | Some(queuedAnimationToIndex) =>
-      let (tSwitched, switchedAnimation, queuedStill) =
-        switchAnimation(
-          prevPaddingAnimationState,
-          prevAnimation,
-          queuedAnimationToIndex,
-        );
-      {
-        ...state,
-        queuedAnimation: queuedStill,
-        centered: switchedAnimation.fromIndex,
-        animationState: Animating(switchedAnimation),
-        paddingCommand:
-          Start({
-            ...
-              animationPaddingState(
-                prevPaddingAnimationState,
-                state.itemSlotPlacement,
-                switchedAnimation,
-              ),
-            tInitial: tSwitched,
-            t: tSwitched,
-          }),
-      };
+      switchedAnimationState(config, state, prevPaddingAnimationState, prevAnimation, queuedAnimationToIndex)
     | _ => {
         ...state,
         centered: prevAnimation.toIndex,
@@ -345,6 +358,7 @@ let stateMachine = (state: state, action: event): state => {
       }
     }
   | (ChangeSelected(newSelected), Idle) =>
+    // {...switchedAnimationState(config, state, InfiniteSliderPadding.initialState, {fromIndex: state.selected, toIndex: state.selected}, newSelected), selected: newSelected}
     let animation = {fromIndex: state.centered, toIndex: newSelected};
     {
       ...state,
@@ -358,7 +372,7 @@ let stateMachine = (state: state, action: event): state => {
           ),
         ),
       animationState: Animating(animation),
-    };
+    };    
   | (ChangeSelected(newSelected), Animating(_)) =>
     let queuedAnimationToIndex = Some(newSelected);
     {
@@ -383,7 +397,7 @@ let initialState = {
   paddingCommand: Nop,
 };
 
-let logTransition = ((state: state, dispatch: event => unit)) => {
+let logTransition = (config: config, (state: state, dispatch: event => unit)) => {
   let wrapped: event => unit =
     (event: event) => (
       {
@@ -391,7 +405,7 @@ let logTransition = ((state: state, dispatch: event => unit)) => {
           "transition on event "
           ++ stringOfEvent(event)
           ++ " to state "
-          ++ stringOfState(stateMachine(state, event)),
+          ++ stringOfState(stateMachine(config, state, event)),
         );
         dispatch(event);
       }: unit
@@ -404,8 +418,9 @@ let make = (~config: config, ~selected: int) => {
   let rowClassName = config.styleBaseName ++ "Row";
 
   let (state, dispatch) =
-    React.useReducer(stateMachine, initialState);
-    //logTransition(React.useReducer(stateMachine, initialState));
+    React.useReducer(stateMachine(config), initialState);
+    // logTransition(config, React.useReducer(stateMachine(config), initialState));
+    
 
   React.useEffect2(
     () => {
