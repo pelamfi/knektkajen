@@ -384,7 +384,7 @@ let updateState = (prevState: state, event: event): state => {
 
   Belt.List.forEach(newState.lastUpdate, emit(state));
 
-  Js.log(Printf.sprintf("%s on %s", stringOfState(newState), stringOfEvent(event)));
+  // Js.log(Printf.sprintf("RelativeNotesState transition to %s on %s", stringOfState(newState), stringOfEvent(event)));
 
   newState;
 };
