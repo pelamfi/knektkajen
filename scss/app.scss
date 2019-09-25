@@ -99,22 +99,24 @@ $grid-margin-gutters: 1px;
 // Also see the meta viewport in index.html
 body {
     touch-action: none;
+    transform: scale(0.5);
 }
 
 // Clipping wrapper to get the mobile browser feel that it
 // does not need to enable extra scrolling to show the 
 // overflowing infinite scroll "buffer" elements.
-.infiniteSlider, .intervalsRowWrapper {
+.infiniteSlider, .intervalsRowWrapper {    
     width: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    //overflow: hidden;
 }
 
 // replaces 0 or 12 items on left end when animation starts
 .infiniteSliderAnimationPadding {
     @extend .small-12;
     @extend .cell;
+    background-color: #14a0fe;
     margin: 0 !important;
 }
 
