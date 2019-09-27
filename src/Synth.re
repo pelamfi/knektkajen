@@ -47,7 +47,7 @@ function (synth) {
 let playVoice = (synths: list(synth), voice: RelativeNotesState.voice): unit => {
     let synth = List.nth(synths, voice.allocated)
 
-    Js.log(Printf.sprintf("playVoice: allocated: %d, prevState: %s, state: %s", voice.allocated, RelativeNotesState.stringOfVoiceState(voice.prevState), RelativeNotesState.stringOfVoiceState(voice.state)))
+    // Js.log(Printf.sprintf("playVoice: allocated: %d, prevState: %s, state: %s", voice.allocated, RelativeNotesState.stringOfVoiceState(voice.prevState), RelativeNotesState.stringOfVoiceState(voice.state)))
 
     switch(voice.key, voice.state, voice.prevState) {
         | (Single(_), _, Attack) =>

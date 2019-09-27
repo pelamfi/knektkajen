@@ -132,7 +132,7 @@ let noteTriggerForKeyboardEvent = (event: Dom.keyboardEvent, ~keyUp: bool): opti
     } else {
       let invert = (invert: bool, interval): interval => invert ? inverse(interval) : interval
 
-      Js.log("code " ++ code);
+      // Js.log("Keyboard code " ++ code);
 
       let interval = List.getBy(intervalKeyBindings, keyBinding =>
         keyBinding.keyCode == code
