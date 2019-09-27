@@ -42,6 +42,12 @@ let initialState: animationState = {
   endWidth: 1.0,
 };
 
+let completedDummyState: animationState = {...initialState,
+  tInitial: 0.0,
+  t: 1.0,
+  endWidth: 0.0,
+};
+
 let stringOfTimer = (timer: option(timerMs)): string => {
   Option.mapWithDefault(timer, "-", timer =>
     "("

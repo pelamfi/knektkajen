@@ -103,7 +103,7 @@ type limitedAnimationSteps = {
 
 let limitAnimationSteps = (toIndex: int, fromIndex: int, limit: int): limitedAnimationSteps => {
   let itemStep: int = toIndex - fromIndex;
-  Js.log("itemStep " ++ string_of_int(itemStep) ++ " " ++ string_of_int(limit))
+  // Js.log("itemStep " ++ string_of_int(itemStep) ++ " " ++ string_of_int(limit))
   if (Js.Math.abs_int(itemStep) > limit) {
     let itemStepLimited = limit * Js.Math.sign_int(itemStep);
     {itemStep: itemStepLimited, overflowToIndex: Some(toIndex), toIndex: fromIndex + itemStepLimited}
@@ -130,19 +130,26 @@ let switchAnimation =
         JsUtil.fmod(prevPaddingState.t, 1.0 /. prevItemStepAbs)
         *. prevItemStepAbs,
       );
-    } else {
+    } else if (prevItemStep > 0) {
       (
         // was going right
         int_of_float(prevPaddingState.t *. float_of_int(prevItemStep)),
         JsUtil.fmod(prevPaddingState.t, 1.0 /. float_of_int(prevItemStep))
         *. float_of_int(prevItemStep),
       );
+    } else {
+      (
+        // was going nowhere, give prev t 1.0 so prev animation is "completed"
+        prevItemStep,
+        1.0,
+      );
     };
+
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
 
   let limited = limitAnimationSteps(queuedAnimationToIndexOrig, fromIndexNew, config.maxJump);
-  Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
-  // Js.log( "switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " nextItemStep:" ++ string_of_int(nextItemStep) ++ " queuedAnimationToIndex: "++ string_of_int(queuedAnimationToIndex));
+  // Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
+  // Js.log( "switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " limited.itemStep:" ++ string_of_int(limited.itemStep) ++ " limited.overflow…: "++ (limited.overflowToIndex |> Option.mapWithDefault(_, "None", string_of_int)));
   if (prevPaddingState.t >= 1.0) {
     // Js.log("PREVIOUS ANIMATION COMPLETE");
     (
@@ -177,13 +184,13 @@ let switchAnimation =
     // was going right, now going left
     let tNextAnimation = 1.0 -. tInsideItem;
     let nextAnimation = {fromIndex: fromIndexNew + 1, toIndex: fromIndexNew};
-    // Js.log( "GOING RIGHT TO GOING LEFT " n++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
+    // Js.log( "GOING RIGHT TO GOING LEFT " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
     (tNextAnimation, nextAnimation, Some(queuedAnimationToIndexOrig));
   } else {
     // was going left, now going right, back right "back" to next element on right
     let nextAnimation = {fromIndex: fromIndexNew, toIndex: fromIndexNew + 1};
     let tNextAnimation = 1.0 -. tInsideItem;
-    // Js.log("GOING LEFT TO GOING RIGHT " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:"w ++ Js.Float.toString(tNextAnimation));
+    // Js.log("GOING LEFT TO GOING RIGHT " ++ Js.Float.toString(tInsideItem) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation) ++ " tNextAnimation:" ++ Js.Float.toString(tNextAnimation));
     (tNextAnimation, nextAnimation, Some(queuedAnimationToIndexOrig));
   };
 };
@@ -358,21 +365,7 @@ let stateMachine = (config: config, state: state, action: event): state => {
       }
     }
   | (ChangeSelected(newSelected), Idle) =>
-    // {...switchedAnimationState(config, state, InfiniteSliderPadding.initialState, {fromIndex: state.selected, toIndex: state.selected}, newSelected), selected: newSelected}
-    let animation = {fromIndex: state.centered, toIndex: newSelected};
-    {
-      ...state,
-      selected: newSelected,
-      paddingCommand:
-        Start(
-          animationPaddingState(
-            InfiniteSliderPadding.initialState,
-            state.itemSlotPlacement,
-            animation,
-          ),
-        ),
-      animationState: Animating(animation),
-    };    
+    {...switchedAnimationState(config, state, InfiniteSliderPadding.completedDummyState, {fromIndex: state.centered, toIndex: state.centered}, newSelected), selected: newSelected}
   | (ChangeSelected(newSelected), Animating(_)) =>
     let queuedAnimationToIndex = Some(newSelected);
     {
