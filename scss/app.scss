@@ -99,7 +99,6 @@ $grid-margin-gutters: 1px;
 // Also see the meta viewport in index.html
 body {
     touch-action: none;
-    transform: scale(0.5);
 }
 
 // Clipping wrapper to get the mobile browser feel that it
@@ -109,7 +108,7 @@ body {
     width: 100%;
     margin: 0;
     padding: 0;
-    //overflow: hidden;
+    overflow: hidden;
 }
 
 // replaces 0 or 12 items on left end when animation starts

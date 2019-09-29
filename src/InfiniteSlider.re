@@ -293,7 +293,7 @@ let getItemSlotPlacement =
   };
   Option.flatMap(left(id0), left0 =>
     Option.map(left(id1), left1 =>
-      {centeredLeftX: left0, width: (left1 -. left0) *. 2.0}
+      {centeredLeftX: left0, width: left1 -. left0}
     )
   );
 };
