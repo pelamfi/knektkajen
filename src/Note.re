@@ -289,7 +289,7 @@ let nameOfInterval = (interval: interval): string => {
   switch(Js.Math.abs_int(interval.steps)) {
     | 0 => "Perfect unison"
     | 1 => "Minor second"
-    | 2 => "Minor second"
+    | 2 => "Major second"
     | 3 => "Minor third"
     | 4 => "Major third"
     | 5 => "Perfect fourth"
