@@ -20,8 +20,8 @@ let make = () => {
 
   <>
     <IntervalsComponent />
-    <RelativeNotesComponent currentNote/>
-    <RelativeNotesComponent currentNote/>
+    <NoteNamesComponent currentNote/>
+    <NoteNumberComponent currentNote/>
     
   </>;
 };

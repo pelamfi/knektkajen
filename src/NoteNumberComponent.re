@@ -3,13 +3,14 @@ open Note
 
 let noteNameFactory = (dispatch: RelativeNotesState.acceptEvent, i: int, current: int, id: string): reactComponent => {
   let current = current == i;
-  let note: Note.note = RelativeNotesState.loopOctaves({offset: i});
+  let octaveLoopedNote: Note.note = RelativeNotesState.loopOctaves({offset: i});
+  let note: Note.note = Note.oneLinedNoteOfNote(octaveLoopedNote);
   <RelativeNoteComponent
     current
     acceptEvent=dispatch
-    key={string_of_int(note.offset)}
+    key={string_of_int(i)}
     cssClass="noteNameCell"
-    renderContent=Note.nameOfNoteInCMajor
+    renderContent={note => {string_of_int(note.offset)}}
     id
     note
   />;
