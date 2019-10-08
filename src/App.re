@@ -1,5 +1,6 @@
 open Belt;
 open ReactUtil;
+open SetUtil;
 
 type appComponent =
   | NoteInfoStrips
@@ -40,19 +41,11 @@ let initial: appTopLevelState = {
   debugModes: Set.fromArray([||], ~id=(module DebugModeComparable)),
 };
 
-let toggleAppComponent =
-    (current: appComponents, key: appComponent): appComponents =>
-  if (Set.has(current, key)) {
-    Set.remove(current, key);
-  } else {
-    Set.add(current, key);
-  };
-
 let appTopLevelStateReducer =
     (prev: appTopLevelState, command: appTopLevelCommand): appTopLevelState => {
   switch (command) {
   | ToggleAppComponent(component) =>
-    let t = toggleAppComponent(prev.appComponents, component);
+    let t = setToggle(prev.appComponents, component);
     {...prev, appComponents: t};
   | _ => prev
   };
