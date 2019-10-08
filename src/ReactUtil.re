@@ -11,3 +11,5 @@ type reactComponent = ReasonReact.reactElement;
 
 let asReact = (elementList: list(reactComponent)): ReasonReact.reactElement =>
   ReasonReact.array(Belt.List.toArray(elementList));
+
+let emptyFragment: reactComponent = asReact([])
