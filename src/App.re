@@ -6,12 +6,9 @@ type appComponent =
   | NoteInfoStrips
   | CanvasExperiment;
 
-type debugMode =
-  | NoteInfoStrips2xZoom;
-
 type appTopLevelCommand =
   | ToggleAppComponent(appComponent)
-  | ToggleDebugMode(debugMode);
+  | ToggleDebugMode(DebugMode.debugMode);
 
 // About Set: https://stackoverflow.com/a/58268653/1148030
 
@@ -21,61 +18,61 @@ module AppComponentComparable =
     let cmp = Pervasives.compare;
   });
 
-module DebugModeComparable =
-  Id.MakeComparable({
-    type t = debugMode;
-    let cmp = Pervasives.compare;
-  });
-
 type appComponents = Set.t(appComponent, AppComponentComparable.identity);
-type debugModes = Set.t(debugMode, DebugModeComparable.identity);
 
 type appTopLevelState = {
   appComponents,
-  debugModes,
+  debugModes: DebugMode.debugModes,
 };
 
+let initialComponents = Set.fromArray([|NoteInfoStrips|], ~id=(module AppComponentComparable))
+
 let initial: appTopLevelState = {
-  appComponents:
-    Set.fromArray([|NoteInfoStrips|], ~id=(module AppComponentComparable)),
-  debugModes: Set.fromArray([||], ~id=(module DebugModeComparable)),
+  appComponents: initialComponents,
+  debugModes: DebugMode.initial,
 };
 
 let appTopLevelStateReducer =
     (prev: appTopLevelState, command: appTopLevelCommand): appTopLevelState => {
   switch (command) {
-  | ToggleAppComponent(component) =>
-    let t = setToggle(prev.appComponents, component);
-    {...prev, appComponents: t};
-  | _ => prev
-  };
+  | ToggleAppComponent(component) => {
+      ...prev,
+      appComponents: setToggle(prev.appComponents, component),
+    }
+  | ToggleDebugMode(mode) => {
+      ...prev,
+      debugModes: setToggle(prev.debugModes, mode),
+    }
+  }
 };
 
 type dispatch = appTopLevelCommand => unit;
 
 let debugKeyboardListenerEffect =
     (dispatch: dispatch, _): option(unit => unit) => {
-  let document = Webapi.Dom.Document.asEventTarget(Webapi.Dom.document);
+      open Webapi.Dom
 
   let keyUpListener = (event: Dom.keyboardEvent): unit => {
-    Webapi.Dom.KeyboardEvent.(
+    KeyboardEvent.(
       if (shiftKey(event) && ctrlKey(event) && altKey(event)) {
         let code = code(event);
         switch (code) {
         | "KeyC" => dispatch(ToggleAppComponent(CanvasExperiment))
         | "KeyS" => dispatch(ToggleAppComponent(NoteInfoStrips))
+        | "KeyZ" => dispatch(ToggleDebugMode(NoteInfoStrips2xZoom))
         | _ => ()
         };
       }
     );
   };
 
-  Webapi.Dom.EventTarget.addKeyUpEventListener(keyUpListener, document);
+  let eventTarget = Document.asEventTarget(document);
+  EventTarget.addKeyUpEventListener(keyUpListener, eventTarget);
   Some(
     () =>
-      Webapi.Dom.EventTarget.removeKeyUpEventListener(
+      EventTarget.removeKeyUpEventListener(
         keyUpListener,
-        document,
+        eventTarget,
       ),
   );
 };
@@ -92,7 +89,7 @@ let make = () => {
       emptyFragment;
     },
     if (Set.has(state.appComponents, NoteInfoStrips)) {
-      <NoteInfoStrips key="noteInfoStrips" />;
+      <NoteInfoStrips key="noteInfoStrips" debugModes=state.debugModes/>;
     } else {
       emptyFragment;
     },

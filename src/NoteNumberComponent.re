@@ -28,6 +28,6 @@ let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.co
 };
 
 [@react.component]
-let make = (~currentNote: note) => {
-  <InfiniteSlider config={sliderConfig(RelativeNotesState.dispatch)} selected={currentNote.offset} />;
+let make = (~currentNote: note, ~style: ReactDOMRe.Style.t = ReactUtil.emptyStyle) => {
+  <InfiniteSlider style config={sliderConfig(RelativeNotesState.dispatch)} selected={currentNote.offset} />;
 };
