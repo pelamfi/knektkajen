@@ -66,5 +66,5 @@ let make = () => {
   );
 
 
-  <div></div>;
+  <div className="noteInfoGridProbeRow"></div>;
 };
