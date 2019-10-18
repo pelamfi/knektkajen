@@ -44,19 +44,11 @@ body {
 // Clipping wrapper to get the mobile browser feel that it
 // does not need to enable extra scrolling to show the 
 // overflowing infinite scroll "buffer" elements.
-.infiniteSlider, .intervalsRowWrapper {    
+%clippingWrapper {
     width: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
-}
-
-// replaces 0 or 12 items on left end when animation starts
-.infiniteSliderAnimationPadding {
-    @extend .small-12;
-    @extend .cell;
-    background-color: #14a0fe;
-    margin: 0 !important;
 }
 
 %noteInfoStrip {
@@ -102,38 +94,44 @@ body {
     text-align: center;
 }
 
-.intervalsRow {
-    @extend %noteInfoStrip;
-}
-
-.relativeNotesRow {
-    @extend %noteInfoStrip;
-}
-
-.noteInfoGridProbeRow {
-    @extend %noteInfoStrip;
-}
-
-.noteNameCell {
-    @extend %intervalInfoElementBox;
-}
-
-.noteStepsCell {
-    @extend %intervalInfoElementBox;    
-}
-
 // Note names, note steps etc "moving" cells have this class also
 // to control animations
-.noteInfoCell {
+%noteInfoCell {
     transition-property: background-color;
     transition-duration: 3s;
+}
+
+%noteInfoCell.current {
+    background-color: #dd2785;
+    transition-property: background-color;
+    transition-duration: 0.1s;
+}
+
+/// interval number strip
+
+.intervalOffsetsStrip {
+    @extend %clippingWrapper;
+}
+
+.intervalOffsetsRow {
+    @extend %noteInfoStrip;
 }
 
 .intervalStepsCell {
     @extend %intervalInfoElementBox;
 }
 
+/// interval name strip
+
 $intervalNameMaxLength: 9rem;
+
+.intervalNamesStrip {
+    @extend %clippingWrapper;
+}
+
+.intervalNamesRow {
+    @extend %noteInfoStrip;
+}
 
 .intervalNameCell {
     @extend %intervalInfoElementBox;
@@ -150,17 +148,40 @@ $intervalNameMaxLength: 9rem;
     @extend %downwardsText;
 }
 
-.noteInfoCell.current {
-    background-color: #dd2785;
-    transition-property: background-color;
-    transition-duration: 0.1s;
+//// relative note names strip
+
+.noteNamesStrip {
+    @extend %clippingWrapper;
 }
 
-.layoutGridProbeGridContainer {
-    @extend .grid-container
+.noteNamesRow {
+    @extend %noteInfoStrip;
 }
-.layoutGridProbeGrid {
-    @extend .grid-x
+
+.noteNameCell {
+    @extend %intervalInfoElementBox;
+    @extend %noteInfoCell;
+}
+
+/// relative note numbers strip
+
+.noteNumbersStrip {
+    @extend %clippingWrapper;
+}
+
+.noteNumbersRow {
+    @extend %noteInfoStrip;
+}
+
+.noteNumberCell {
+    @extend %intervalInfoElementBox;
+    @extend %noteInfoCell;
+}
+
+/// hidden row used to query the actual width of a "note info cell"
+
+.noteInfoGridProbeRow {
+    @extend %noteInfoStrip;
 }
 
 @include xy-margin-grid-classes(left right, false, '.relative-notes-grid')

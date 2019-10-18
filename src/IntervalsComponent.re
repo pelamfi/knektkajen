@@ -21,10 +21,19 @@ let make =
   let intervalOffsetElements: list(reactComponent) = RelativeNotesState.intervalsInUi |> Belt.List.map(_, makeIntervalOffsetComponent(RelativeNotesState.dispatch));
   let intervalNameElements: list(reactComponent) = RelativeNotesState.intervalsInUi |> Belt.List.map(_, makeIntervalNameComponent(RelativeNotesState.dispatch));
 
-  <div id="intervalsRowWrapper" className="intervalsRowWrapper">
-  <div id="intervalsRow" className="intervalsRow">{asReact(intervalOffsetElements)}
+  <>
+
+  <div className="intervalOffsetsStrip">
+  <div className="intervalOffsetsRow">
+  {asReact(intervalOffsetElements)}
   </div>
-  <div id="intervalsRow" className="intervalsRow">{asReact(intervalNameElements)}
   </div>
-  </div>;
+
+  <div className="intervalNamesStrip">
+  <div className="intervalNamesRow">
+  {asReact(intervalNameElements)}
+  </div>
+  </div>
+
+  </>;
 };

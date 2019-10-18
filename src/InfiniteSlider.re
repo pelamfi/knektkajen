@@ -407,7 +407,7 @@ let logTransition = (config: config, (state: state, dispatch: event => unit)) =>
 };
 
 [@react.component]
-let make = (~config: config, ~selected: int, ~style: ReactDOMRe.Style.t = ReactUtil.emptyStyle) => {
+let make = (~config: config, ~selected: int, ~className: string, ~style: ReactDOMRe.Style.t = ReactUtil.emptyStyle) => {
   let rowClassName = config.styleBaseName ++ "Row";
 
   let (state, dispatch) =
@@ -443,7 +443,7 @@ let make = (~config: config, ~selected: int, ~style: ReactDOMRe.Style.t = ReactU
 
   <div
     style
-    className="infiniteSlider"
+    className
     onClick={event => handleClick(state, config, event)}>
     <div className=rowClassName> {asReact(e)} </div>
   </div>;

@@ -13,7 +13,7 @@ let make =
     ) => {
   let className =
     current
-      ? cssClass ++ " noteInfoCell current" : cssClass ++ " noteInfoCell";
+      ? cssClass ++ " current" : cssClass;
   let renderedNote: string = renderContent(note);
   <div id className> {ReasonReact.string(renderedNote)} </div>;
 };

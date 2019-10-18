@@ -9,7 +9,7 @@ let noteNameFactory = (dispatch: RelativeNotesState.acceptEvent, i: int, current
     current
     acceptEvent=dispatch
     key={string_of_int(i)}
-    cssClass="noteNameCell"
+    cssClass="noteNumberCell"
     renderContent={note => {string_of_int(note.offset)}}
     id
     note
@@ -18,8 +18,8 @@ let noteNameFactory = (dispatch: RelativeNotesState.acceptEvent, i: int, current
 
 let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.config => {
   componentFactory: noteNameFactory(dispatch),
-  styleBaseName: "relativeNotes",
-  componentBaseName: "relativeNotes",
+  styleBaseName: "noteNumbers",
+  componentBaseName: "noteNumbers",
   itemSelectedDispatch: i => {
     dispatch(NoteTrigger(NoteClick({offset: i}, MouseClick)));
   },
@@ -29,5 +29,5 @@ let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.co
 
 [@react.component]
 let make = (~currentNote: note, ~style: ReactDOMRe.Style.t = ReactUtil.emptyStyle) => {
-  <InfiniteSlider style config={sliderConfig(RelativeNotesState.dispatch)} selected={currentNote.offset} />;
+  <InfiniteSlider style className="noteNumbersStrip" config={sliderConfig(RelativeNotesState.dispatch)} selected={currentNote.offset} />;
 };

@@ -263,11 +263,10 @@ let make =
   };
 
   let widthStyle = paddingWidthStyle(width);
-  let style = ReactDOMRe.Style.make(~width=widthStyle, ());
+  let style = ReactDOMRe.Style.make(~width=widthStyle, ~backgroundColor="#14a0fe", ~margin="0", ());
   <div
     key="infiniteSliderAnimationPadding"
     id
-    className="infiniteSliderAnimationPadding"
     style
   />;
 };

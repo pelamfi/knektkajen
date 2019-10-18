@@ -17,8 +17,8 @@ let noteNameFactory = (dispatch: RelativeNotesState.acceptEvent, i: int, current
 
 let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.config => {
   componentFactory: noteNameFactory(dispatch),
-  styleBaseName: "relativeNotes",
-  componentBaseName: "relativeNotes",
+  styleBaseName: "noteNames", // Row will be appended
+  componentBaseName: "noteNames",
   itemSelectedDispatch: i => {
     dispatch(NoteTrigger(NoteClick({offset: i}, MouseClick)));
   },
@@ -28,5 +28,5 @@ let sliderConfig = (dispatch: RelativeNotesState.acceptEvent): InfiniteSlider.co
 
 [@react.component]
 let make = (~currentNote: note, ~style: ReactDOMRe.Style.t = ReactUtil.emptyStyle) => {
-  <InfiniteSlider style config={sliderConfig(RelativeNotesState.dispatch)} selected={currentNote.offset} />;
+  <InfiniteSlider className="noteNamesStrip" style config={sliderConfig(RelativeNotesState.dispatch)} selected={currentNote.offset} />;
 };
