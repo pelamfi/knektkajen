@@ -97,5 +97,8 @@ let make = () => {
 
   React.useEffect0(debugKeyboardListenerEffect(dispatchCommand));
 
-  <> {asReact(elements)} </>;
+  <>
+  {asReact(elements)}
+  <LayoutGridProbe/>
+  </>
 };
