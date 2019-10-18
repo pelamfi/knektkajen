@@ -26,7 +26,7 @@ let make = (~debugModes: DebugMode.debugModes) => {
 
   let foo = ReactDOMRe.Style.make(());
 
-  <div style>
+  <div className="noteInfoStrips" style>
     <IntervalsComponent />
     <NoteNamesComponent style=styleChild currentNote/>
     <NoteNumberComponent style=styleChild currentNote/>
