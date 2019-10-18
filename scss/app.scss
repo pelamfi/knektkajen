@@ -51,7 +51,7 @@ body {
     overflow: hidden;
 }
 
-%noteInfoStrip {
+%noteInfoRow {
     @extend .grid-x;
     @extend .relative-notes-grid;
     margin-left: -45% !important;
@@ -59,28 +59,28 @@ body {
 }
 
 @media screen and (max-width: 1080px) {
-  %noteInfoStrip {
+  %noteInfoRow {
     margin-left: -80% !important;
     margin-right: -80% !important;
   }
 }
 
 @media screen and (max-width: 800px) {
-  %noteInfoStrip {
+  %noteInfoRow {
     margin-left: -120% !important;
     margin-right: -120% !important;
   }
 }
 
 @media screen and (max-width: 660px) {
-  %noteInfoStrip {
+  %noteInfoRow {
     margin-left: -150% !important;
     margin-right: -150% !important;
   }
 }
 
 @media screen and (max-width: 550px) {
-  %noteInfoStrip {
+  %noteInfoRow {
     margin-left: -200% !important;
     margin-right: -200% !important;
   }
@@ -114,7 +114,7 @@ body {
 }
 
 .intervalOffsetsRow {
-    @extend %noteInfoStrip;
+    @extend %noteInfoRow;
 }
 
 .intervalStepsCell {
@@ -130,7 +130,7 @@ $intervalNameMaxLength: 9rem;
 }
 
 .intervalNamesRow {
-    @extend %noteInfoStrip;
+    @extend %noteInfoRow;
 }
 
 .intervalNameCell {
@@ -155,7 +155,7 @@ $intervalNameMaxLength: 9rem;
 }
 
 .noteNamesRow {
-    @extend %noteInfoStrip;
+    @extend %noteInfoRow;
 }
 
 .noteNameCell {
@@ -170,7 +170,7 @@ $intervalNameMaxLength: 9rem;
 }
 
 .noteNumbersRow {
-    @extend %noteInfoStrip;
+    @extend %noteInfoRow;
 }
 
 .noteNumberCell {
@@ -181,7 +181,7 @@ $intervalNameMaxLength: 9rem;
 /// hidden row used to query the actual width of a "note info cell"
 
 .noteInfoGridProbeRow {
-    @extend %noteInfoStrip;
+    @extend %noteInfoRow;
 }
 
 @include xy-margin-grid-classes(left right, false, '.relative-notes-grid')
