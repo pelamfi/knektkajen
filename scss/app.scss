@@ -15,7 +15,7 @@
 //@import 'motion-ui';
 
 // https://stackoverflow.com/a/2416032/1148030
-.downwardsText {
+%downwardsText {
     -webkit-transform: rotate(90deg);  /* Chrome, Opera 15+, Safari 3.1+ */
         -ms-transform: rotate(90deg);  /* IE 9 */
             transform: rotate(90deg);  /* Firefox 16+, IE 10+, Opera */
@@ -59,7 +59,7 @@ body {
     margin: 0 !important;
 }
 
-.relativeNotesRow, .intervalsRow {
+%noteInfoStrip {
     @extend .grid-x;
     @extend .relative-notes-grid;
     margin-left: -45% !important;
@@ -67,34 +67,34 @@ body {
 }
 
 @media screen and (max-width: 1080px) {
-  .relativeNotesRow, .intervalsRow {
+  %noteInfoStrip {
     margin-left: -80% !important;
     margin-right: -80% !important;
   }
 }
 
 @media screen and (max-width: 800px) {
-  .relativeNotesRow, .intervalsRow {
+  %noteInfoStrip {
     margin-left: -120% !important;
     margin-right: -120% !important;
   }
 }
 
 @media screen and (max-width: 660px) {
-  .relativeNotesRow, .intervalsRow {
+  %noteInfoStrip {
     margin-left: -150% !important;
     margin-right: -150% !important;
   }
 }
 
 @media screen and (max-width: 550px) {
-  .relativeNotesRow, .intervalsRow {
+  %noteInfoStrip {
     margin-left: -200% !important;
     margin-right: -200% !important;
   }
 }
 
-.intervalInfoElementBox {
+%intervalInfoElementBox {
     @extend .small-1;
     @extend .cell;
     border: 1px solid rgba($black, 0.25);
@@ -102,12 +102,20 @@ body {
     text-align: center;
 }
 
+.intervalsRow {
+    @extend %noteInfoStrip;
+}
+
+.relativeNotesRow {
+    @extend %noteInfoStrip;
+}
+
 .noteNameCell {
-    @extend .intervalInfoElementBox;
+    @extend %intervalInfoElementBox;
 }
 
 .noteStepsCell {
-    @extend .intervalInfoElementBox;    
+    @extend %intervalInfoElementBox;    
 }
 
 // Note names, note steps etc "moving" cells have this class also
@@ -118,13 +126,13 @@ body {
 }
 
 .intervalStepsCell {
-    @extend .intervalInfoElementBox;
+    @extend %intervalInfoElementBox;
 }
 
 $intervalNameMaxLength: 9rem;
 
 .intervalNameCell {
-    @extend .intervalInfoElementBox;
+    @extend %intervalInfoElementBox;
     text-align: left;
     height: $intervalNameMaxLength;
 }
@@ -135,7 +143,7 @@ $intervalNameMaxLength: 9rem;
 }
 
 .intervalNameRotate {
-    @extend .downwardsText;
+    @extend %downwardsText;
 }
 
 .noteInfoCell.current {
