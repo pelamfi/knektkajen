@@ -25,66 +25,6 @@
     @extend .grid-container;
 } 
 
-.mainMenuRow {
-    @extend .grid-x;
-    @extend .grid-margin-x;
-}
-
-.mainMenuItem {
-    @extend .small-3;
-    @extend .cell;
-    @extend .callout;
-}
-
-.mainMenuItem.current {
-    @extend .callout.primary;
-}
-
-.mainRow {
-    @extend .grid-x;
-    @extend .grid-margin-x;
-}
-
-.bottomRow {
-    @extend .grid-x;
-    @extend .grid-margin-x;
-}
-
-.left {
-    @extend .small-12;
-    @extend .medium-3;
-    @extend .large-2;
-    @extend .cell;
-    @extend .callout;
-}
-
-.svgView {
-    @extend .small-12;
-    @extend .medium-6;
-    @extend .large-8;
-    @extend .cell;
-    @extend .callout;
-}
-
-.svgView svg {
-    width: 100%;
-    height: 400px; // TODO: Responsive height somehow..
-}
-
-.right {
-    @extend .small-12;
-    @extend .medium-3;
-    @extend .large-2;
-    @extend .cell;
-    @extend .callout;
-}
-
-.testCell {
-    @extend .small-3;
-    @extend .cell;
-    @extend .callout;
-}
-
 // 25 items in visible part: 12 + 12 + 1 (1 extra C to be able to jump full octave)
 // 12 extra items on both ends for scrolling buffer
 // when starting to scroll the extra items at the shrinking end are replaced
@@ -202,6 +142,13 @@ $intervalNameMaxLength: 9rem;
     background-color: #dd2785;
     transition-property: background-color;
     transition-duration: 0.1s;
+}
+
+.layoutGridProbeGridContainer {
+    @extend .grid-container
+}
+.layoutGridProbeGrid {
+    @extend .grid-x
 }
 
 @include xy-margin-grid-classes(left right, false, '.relative-notes-grid')
