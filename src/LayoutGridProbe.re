@@ -15,7 +15,7 @@ type state = {
 };
 
 type itemSlotPlacement = {
-  centeredLeftX: float,
+  leftX: float,
   width: float,
 };
 
@@ -41,13 +41,16 @@ let getItemSlotPlacement =
     Option.map(boundingClientRect, Dom.DomRect.left);
   };
   Option.flatMap(left(id0), left0 =>
-    Option.map(left(id1), left1 =>
-      {centeredLeftX: left0, width: left1 -. left0}
+    Option.map(left(id1), left1 => {
+        let width = left1 -. left0;
+        Js.log("foo " ++ string_of_float(left0) ++ " foo " ++ string_of_float(width));
+        {leftX: left0, width: width}
+      }
     )
   );
 };
 
-let config: config = {id0: "foo", id1: "bar"};
+let config: config = {id0: "probe0", id1: "probe1"};
 
 [@react.component]
 let make = () => {
@@ -57,6 +60,8 @@ let make = () => {
 
   React.useLayoutEffect2(
     () => {
+      let observer = ObserveResize.observeResize("#probe0", () => {Js.log("foo")});
+
       if (state.animationState == Idle) {
         dispatch(SlotPlacement(getItemSlotPlacement(config, state)));
       };
@@ -66,5 +71,14 @@ let make = () => {
   );
 
 
-  <div className="noteInfoGridProbeRow"></div>;
+  <div className="noteInfoGridProbeStrip">
+  <div className="noteInfoGridProbeRow">
+  <div id="probe0" className="noteInfoGridProbeCell">
+  {React.string("0")}
+  </div>
+  <div id="probe1" className="noteInfoGridProbeCell">
+  {React.string("1")}
+  </div>
+  </div>
+  </div>;
 };

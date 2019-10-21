@@ -180,8 +180,16 @@ $intervalNameMaxLength: 9rem;
 
 /// hidden row used to query the actual width of a "note info cell"
 
+.noteInfoGridProbeStrip {
+    @extend %clippingWrapper;
+}
+
 .noteInfoGridProbeRow {
     @extend %noteInfoRow;
+}
+
+.noteInfoGridProbeCell {
+    @extend %intervalInfoElementBox;
 }
 
 @include xy-margin-grid-classes(left right, false, '.relative-notes-grid')
