@@ -7,29 +7,13 @@ type config = {
   id1: string
 };
 
-type animationState =
-  | Idle
-
-type state = {
-  animationState,
-};
-
-type itemSlotPlacement = {
+type gridLayoutInfo = {
   leftX: float,
-  width: float,
+  pitchX: float,
 };
 
-let initialState: state = {animationState: Idle};
-
-type event =
-  | SlotPlacement(option(itemSlotPlacement));
-
-let stateMachine = (config: config, state: state, action: event): state => {
-  state
-};
-
-let getItemSlotPlacement =
-    (config: config, state: state): option(itemSlotPlacement) => {
+let getGridLayoutInfo =
+    (config: config): option(gridLayoutInfo) => {
   let doc = Webapi.Dom.document;
   let id0 = config.id0;
   let id1 = config.id1;
@@ -42,9 +26,9 @@ let getItemSlotPlacement =
   };
   Option.flatMap(left(id0), left0 =>
     Option.map(left(id1), left1 => {
-        let width = left1 -. left0;
-        Js.log("foo " ++ string_of_float(left0) ++ " foo " ++ string_of_float(width));
-        {leftX: left0, width: width}
+        let pitchX = left1 -. left0;
+        Js.log("foo " ++ Js.Float.toString(left0) ++ " foo " ++ Js.Float.toString(pitchX));
+        {leftX: left0, pitchX}
       }
     )
   );
@@ -52,24 +36,23 @@ let getItemSlotPlacement =
 
 let config: config = {id0: "probe0", id1: "probe1"};
 
+type gridLayoutInfoCallback = (gridLayoutInfo) => unit;
+
 [@react.component]
-let make = () => {
+let make = (~infoCallback: gridLayoutInfoCallback) => {
   
-  let (state, dispatch) =
-    React.useReducer(stateMachine(config), initialState);
-
-  React.useLayoutEffect2(
+  React.useLayoutEffect0(
     () => {
-      let observer = ObserveResize.observeResize("#probe0", () => {Js.log("foo")});
+      let observer = ObserveResize.observeResize(config.id0, () => {
+        Option.map(getGridLayoutInfo(config), infoCallback) |> ignore;
+        ()
+      });
 
-      if (state.animationState == Idle) {
-        dispatch(SlotPlacement(getItemSlotPlacement(config, state)));
-      };
-      None;
-    },
-    ((), state.animationState),
+      Option.map(getGridLayoutInfo(config), infoCallback) |> ignore;
+
+      Some(() => {ObserveResize.unobserve(observer)})
+    }
   );
-
 
   <div className="noteInfoGridProbeStrip">
   <div className="noteInfoGridProbeRow">
