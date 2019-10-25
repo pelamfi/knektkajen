@@ -1,4 +1,3 @@
-open ReactUtil;
 open Belt;
 open Webapi;
 
@@ -7,13 +6,13 @@ type config = {
   id1: string
 };
 
-type gridLayoutInfo = {
+type layoutGridInfo = {
   leftX: float,
   pitchX: float,
 };
 
-let getGridLayoutInfo =
-    (config: config): option(gridLayoutInfo) => {
+let getLayoutGridInfo =
+    (config: config): option(layoutGridInfo) => {
   let doc = Webapi.Dom.document;
   let id0 = config.id0;
   let id1 = config.id1;
@@ -27,7 +26,6 @@ let getGridLayoutInfo =
   Option.flatMap(left(id0), left0 =>
     Option.map(left(id1), left1 => {
         let pitchX = left1 -. left0;
-        Js.log("foo " ++ Js.Float.toString(left0) ++ " foo " ++ Js.Float.toString(pitchX));
         {leftX: left0, pitchX}
       }
     )
@@ -36,22 +34,25 @@ let getGridLayoutInfo =
 
 let config: config = {id0: "probe0", id1: "probe1"};
 
-type gridLayoutInfoCallback = (gridLayoutInfo) => unit;
+type layoutGridInfoCallback = (layoutGridInfo) => unit;
 
 [@react.component]
-let make = (~infoCallback: gridLayoutInfoCallback) => {
+let make = (~debugModes: DebugMode.debugModes, ~infoCallback: layoutGridInfoCallback) => {
   
-  React.useLayoutEffect0(
+  // The debugModes is here only as a hack to get new dimensions when zoom debug mode is used.
+  // Resize observer does not update when transform change
+
+  React.useLayoutEffect2(
     () => {
-      let observer = ObserveResize.observeResize(config.id0, () => {
-        Option.map(getGridLayoutInfo(config), infoCallback) |> ignore;
+      let sendUpdate = () => {
+        Option.map(getLayoutGridInfo(config), infoCallback) |> ignore;
         ()
-      });
+      }
 
-      Option.map(getGridLayoutInfo(config), infoCallback) |> ignore;
-
+      let observer = ObserveResize.observeResize(config.id0, sendUpdate);
       Some(() => {ObserveResize.unobserve(observer)})
-    }
+    },
+    ((), debugModes)
   );
 
   <div className="noteInfoGridProbeStrip">

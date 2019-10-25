@@ -10,7 +10,7 @@ function observeResize(id, callback) {
     // https://stackoverflow.com/questions/6492683/how-to-detect-divs-dimension-changed
     const ro = new ResizeObserver(callback);
     ro.observe(target)
-    ro
+    return ro
 }
 |}];
 

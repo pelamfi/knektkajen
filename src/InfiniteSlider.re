@@ -298,26 +298,6 @@ let getItemSlotPlacement =
   );
 };
 
-let handleClick =
-    (state: state, config: config, click: ReactEvent.Mouse.t): unit => {
-  Option.map(
-    state.itemSlotPlacement,
-    placement => {
-      let clickX = float_of_int(ReactEvent.Mouse.clientX(click));
-
-      let slot =
-        clickX > placement.centeredLeftX
-          ? (clickX -. placement.centeredLeftX) /. placement.width
-          : (clickX -. placement.centeredLeftX) /. placement.width -. 1.0;
-
-      let newSelected = state.selected + int_of_float(slot);
-      config.itemSelectedDispatch(newSelected);
-      // Js.logMany(toArray([ "handleClick item width:", Js.Float.toString(placement.width), "clickX", Js.Float.toString(clickX), "slot", Js.Float.toString(slot), "newSelected", string_of_int(newSelected), "state.selected", string_of_int(state.selected),]),);
-    },
-  )
-  |> ignore;
-};
-
 let switchedAnimationState = (
   config: config, 
   state: state,
@@ -443,8 +423,7 @@ let make = (~config: config, ~selected: int, ~className: string, ~style: ReactDO
 
   <div
     style
-    className
-    onClick={event => handleClick(state, config, event)}>
+    className>
     <div className=rowClassName> {asReact(e)} </div>
   </div>;
 };

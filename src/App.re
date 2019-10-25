@@ -97,10 +97,7 @@ let make = () => {
 
   React.useEffect0(debugKeyboardListenerEffect(dispatchCommand));
 
-  let gridLayoutInfoCallback: LayoutGridProbe.gridLayoutInfoCallback = (info) => {Js.log("foo")};
-
   <>
   {asReact(elements)}
-  <LayoutGridProbe infoCallback=gridLayoutInfoCallback/>
   </>
 };
