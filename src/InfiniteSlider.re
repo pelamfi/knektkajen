@@ -15,18 +15,12 @@ type animationState =
   | Idle
   | Animating(animation); // CSS animation slide and a timer running
 
-type itemSlotPlacement = {
-  centeredLeftX: float,
-  width: float,
-};
-
 type state = {
   selected: int,
   centered: int, // if animation is running, this is where the last centering animation was aiming for (toIndex)
   queuedAnimation: option(int),
   animationState,
-  paddingCommand: InfiniteSliderPadding.command,
-  itemSlotPlacement: option(itemSlotPlacement),
+  paddingCommand: InfiniteSliderPadding.command
 };
 
 let stringOfAnimation = (a: animation): string => {
@@ -63,8 +57,7 @@ let stringOfState = (state: state): string => {
 
 type event =
   | AnimationComplete(InfiniteSliderPadding.animationState)
-  | ChangeSelected(int)
-  | SlotPlacement(option(itemSlotPlacement));
+  | ChangeSelected(int);
 
 let stringOfEvent = (event: event): string => {
   switch (event) {
@@ -74,7 +67,6 @@ let stringOfEvent = (event: event): string => {
     ++ ")"
   | ChangeSelected(newSelected) =>
     "ChangeSelected(" ++ string_of_int(newSelected) ++ ")"
-  | SlotPlacement(_) => "SlotPlacement(...)"
   };
 };
 
@@ -198,7 +190,6 @@ let switchAnimation =
 let animationPaddingState =
     (
       prevState: InfiniteSliderPadding.animationState,
-      itemSlotPlacement: option(itemSlotPlacement),
       animation,
     )
     : InfiniteSliderPadding.animationState => {
@@ -216,15 +207,14 @@ let animationPaddingState =
         float_of_int(fromIndex - toIndex) // grow
       );
     };
-  Option.mapWithDefault(itemSlotPlacement, prevState, isp =>
+    let itemWidth = 20.0;
     {
       ...prevState,
       timer: InfiniteSliderPadding.restart(prevState.timer),
       durationMs: slideAnimationDurationMs,
-      startWidth: fromItems *. isp.width,
-      endWidth: toItems *. isp.width,
+      startWidth: fromItems *. itemWidth,
+      endWidth: toItems *. itemWidth,
     }
-  );
 };
 
 let replacedItems = (animation: animation): int =>
@@ -279,25 +269,6 @@ let elems =
   };
 };
 
-let getItemSlotPlacement =
-    (state: state, config: config): option(itemSlotPlacement) => {
-  let doc = Webapi.Dom.document;
-  let id0 = id(config, state.centered);
-  let id1 = id(config, state.centered + 1);
-  let left = (id: string): option(float) => {
-    let e = Webapi.Dom.Document.getElementById(id, doc);
-    // https://stackoverflow.com/a/18053642/1148030
-    let boundingClientRect =
-      Option.map(e, Webapi.Dom.Element.getBoundingClientRect);
-    Option.map(boundingClientRect, Dom.DomRect.left);
-  };
-  Option.flatMap(left(id0), left0 =>
-    Option.map(left(id1), left1 =>
-      {centeredLeftX: left0, width: left1 -. left0}
-    )
-  );
-};
-
 let switchedAnimationState = (
   config: config, 
   state: state,
@@ -321,7 +292,6 @@ let switchedAnimationState = (
           ...
             animationPaddingState(
               prevPaddingAnimationState,
-              state.itemSlotPlacement,
               switchedAnimation,
             ),
           tInitial: tSwitched,
@@ -354,7 +324,6 @@ let stateMachine = (config: config, state: state, action: event): state => {
       paddingCommand: Stop,
       queuedAnimation: queuedAnimationToIndex,
     };
-  | (SlotPlacement(info), _) => {...state, itemSlotPlacement: info}
   | (AnimationComplete(_), Idle) =>
     Js.log("Should be impossible transition?");
     state;
@@ -366,7 +335,6 @@ let initialState = {
   centered: 0,
   queuedAnimation: None,
   animationState: Idle,
-  itemSlotPlacement: None,
   paddingCommand: Nop,
 };
 
@@ -404,17 +372,6 @@ let make = (~config: config, ~selected: int, ~className: string, ~style: ReactDO
     },
     ((), selected),
   );
-
-  React.useLayoutEffect2(
-    () => {
-      if (state.animationState == Idle) {
-        dispatch(SlotPlacement(getItemSlotPlacement(state, config)));
-      };
-      None;
-    },
-    ((), state.animationState),
-  );
-
 
   let e: list(reactComponent) =
     elems(state, config, paddingAnimationState =>
