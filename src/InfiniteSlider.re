@@ -1,6 +1,5 @@
 open ReactUtil;
 open Belt;
-open Webapi;
 
 let slideAnimationDurationMs = 333.0;
 
@@ -279,6 +278,15 @@ let elems =
   };
 };
 
+let offsetLeftOfElement = (id: string): option(float) => {
+  open Webapi.Dom;
+  let e =
+    Document.getElementById(id, document)
+    |> Option.flatMap(_, Element.asHtmlElement);
+  // https://www.w3schools.com/jsref/prop_element_offsetleft.asp
+  Option.map(e, HtmlElement.offsetLeft) |> Option.map(_, float_of_int);
+};
+
 let switchedAnimationState =
     (
       config: config,
@@ -298,19 +306,10 @@ let switchedAnimationState =
 
   let id0 = id(config, state.centered);
   let id1 = id(config, state.centered + 1);
-  let doc = Webapi.Dom.document;
-  let leftOfElement = (id: string): option(float) => {
-    let e =
-      Webapi.Dom.Document.getElementById(id, doc)
-      |> Option.flatMap(_, Webapi.Dom.Element.asHtmlElement);
-    // https://www.w3schools.com/jsref/prop_element_offsetleft.asp
-    Option.map(e, Webapi.Dom.HtmlElement.offsetLeft)
-    |> Option.map(_, float_of_int);
-  };
 
   let itemPitchX =
-    Option.flatMap(leftOfElement(id0), left0 =>
-      Option.map(leftOfElement(id1), left1 => left1 -. left0)
+    Option.flatMap(offsetLeftOfElement(id0), left0 =>
+      Option.map(offsetLeftOfElement(id1), left1 => left1 -. left0)
     )
     |> Option.mapWithDefault(_, 20.0, x => x);
 
