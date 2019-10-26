@@ -190,7 +190,8 @@ let switchAnimation =
 let animationPaddingState =
     (
       prevState: InfiniteSliderPadding.animationState,
-      animation,
+      itemPitchX: float,
+      animation: animation,
     )
     : InfiniteSliderPadding.animationState => {
   let {fromIndex, toIndex} = animation;
@@ -207,13 +208,12 @@ let animationPaddingState =
         float_of_int(fromIndex - toIndex) // grow
       );
     };
-    let itemWidth = 20.0;
     {
       ...prevState,
       timer: InfiniteSliderPadding.restart(prevState.timer),
       durationMs: slideAnimationDurationMs,
-      startWidth: fromItems *. itemWidth,
-      endWidth: toItems *. itemWidth,
+      startWidth: fromItems *. itemPitchX,
+      endWidth: toItems *. itemPitchX,
     }
 };
 
@@ -282,6 +282,25 @@ let switchedAnimationState = (
         prevAnimation,
         queuedAnimationToIndex,
       );
+
+    let id0 = id(config, state.centered);
+    let id1 = id(config, state.centered + 1);
+    let doc = Webapi.Dom.document;
+    let leftOfElement = (id: string): option(float) => {
+      let e = Webapi.Dom.Document.getElementById(id, doc) |> Option.flatMap(_, Webapi.Dom.Element.asHtmlElement);
+      // https://www.w3schools.com/jsref/prop_element_offsetleft.asp
+      Option.map(e, Webapi.Dom.HtmlElement.offsetLeft) |> Option.map(_, float_of_int);
+    };
+
+    let itemPitchX = Option.flatMap(leftOfElement(id0), left0 =>
+      Option.map(leftOfElement(id1), left1 => left1 -. left0)
+    ) |> Option.mapWithDefault(_, 20.0, x => x);
+
+    let paddingState = animationPaddingState(
+              prevPaddingAnimationState,
+              itemPitchX,
+              switchedAnimation,
+            );  
     {
       ...state,
       queuedAnimation: queuedStill,
@@ -290,10 +309,7 @@ let switchedAnimationState = (
       paddingCommand:
         Start({
           ...
-            animationPaddingState(
-              prevPaddingAnimationState,
-              switchedAnimation,
-            ),
+          paddingState,
           tInitial: tSwitched,
           t: tSwitched,
         }),
