@@ -20,7 +20,7 @@ type state = {
   centered: int, // if animation is running, this is where the last centering animation was aiming for (toIndex)
   queuedAnimation: option(int),
   animationState,
-  paddingCommand: InfiniteSliderPadding.command
+  paddingCommand: InfiniteSliderPadding.command,
 };
 
 let stringOfAnimation = (a: animation): string => {
@@ -90,19 +90,24 @@ let id_for_string = (config: config, s: string): string => {
 type limitedAnimationSteps = {
   itemStep: int,
   overflowToIndex: option(int),
-  toIndex: int
+  toIndex: int,
 };
 
-let limitAnimationSteps = (toIndex: int, fromIndex: int, limit: int): limitedAnimationSteps => {
+let limitAnimationSteps =
+    (toIndex: int, fromIndex: int, limit: int): limitedAnimationSteps => {
   let itemStep: int = toIndex - fromIndex;
   // Js.log("itemStep " ++ string_of_int(itemStep) ++ " " ++ string_of_int(limit))
   if (Js.Math.abs_int(itemStep) > limit) {
     let itemStepLimited = limit * Js.Math.sign_int(itemStep);
-    {itemStep: itemStepLimited, overflowToIndex: Some(toIndex), toIndex: fromIndex + itemStepLimited}
+    {
+      itemStep: itemStepLimited,
+      overflowToIndex: Some(toIndex),
+      toIndex: fromIndex + itemStepLimited,
+    };
   } else {
-    {itemStep: itemStep, overflowToIndex: None, toIndex: toIndex}
-  }
-}
+    {itemStep, overflowToIndex: None, toIndex};
+  };
+};
 
 let switchAnimation =
     (
@@ -139,17 +144,23 @@ let switchAnimation =
 
   let fromIndexNew = prevAnimation.fromIndex + currentItemInPrevAnimation;
 
-  let limited = limitAnimationSteps(queuedAnimationToIndexOrig, fromIndexNew, config.maxJump);
+  let limited =
+    limitAnimationSteps(
+      queuedAnimationToIndexOrig,
+      fromIndexNew,
+      config.maxJump,
+    );
   // Js.log( "switchAnimation prevAnimation: " ++ stringOfAnimation(prevAnimation) ++ " prevPaddingState.t: "++ Js.Float.toString(prevPaddingState.t));
   // Js.log( "switchAnimation fromIndexNew: " ++ string_of_int(fromIndexNew) ++ " currentItemInPrevAnimation:" ++ string_of_int(currentItemInPrevAnimation) ++ " prevItemStep: " ++ string_of_int(prevItemStep) ++ " tInsideItem:" ++ Js.Float.toString(tInsideItem) ++ " limited.itemStep:" ++ string_of_int(limited.itemStep) ++ " limited.overflow…: "++ (limited.overflowToIndex |> Option.mapWithDefault(_, "None", string_of_int)));
   if (prevPaddingState.t >= 1.0) {
-    // Js.log("PREVIOUS ANIMATION COMPLETE");
     (
+      // Js.log("PREVIOUS ANIMATION COMPLETE");
       0.0,
       {fromIndex: prevAnimation.toIndex, toIndex: limited.toIndex},
       limited.overflowToIndex,
     );
-  } else if (Js.Math.sign_int(prevItemStep) == Js.Math.sign_int(limited.itemStep)) {
+  } else if (Js.Math.sign_int(prevItemStep)
+             == Js.Math.sign_int(limited.itemStep)) {
     if (prevItemStep < 0) {
       // going left
       let tSwitched = tInsideItem /. float_of_int(- limited.itemStep + 1);
@@ -162,10 +173,7 @@ let switchAnimation =
     } else {
       // going right. Very simple, just scale the tInsideItem to the next animation
       let tSwitched = tInsideItem /. float_of_int(limited.itemStep);
-      let nextAnimation = {
-        fromIndex: fromIndexNew,
-        toIndex: limited.toIndex,
-      };
+      let nextAnimation = {fromIndex: fromIndexNew, toIndex: limited.toIndex};
       // Js.log( "NORMAL RIGHT " ++ Js.Float.toString(tSwitched) ++ " nextAnimation: " ++ stringOfAnimation(nextAnimation));
       (tSwitched, nextAnimation, limited.overflowToIndex);
     };
@@ -208,13 +216,13 @@ let animationPaddingState =
         float_of_int(fromIndex - toIndex) // grow
       );
     };
-    {
-      ...prevState,
-      timer: InfiniteSliderPadding.restart(prevState.timer),
-      durationMs: slideAnimationDurationMs,
-      startWidth: fromItems *. itemPitchX,
-      endWidth: toItems *. itemPitchX,
-    }
+  {
+    ...prevState,
+    timer: InfiniteSliderPadding.restart(prevState.timer),
+    durationMs: slideAnimationDurationMs,
+    startWidth: fromItems *. itemPitchX,
+    endWidth: toItems *. itemPitchX,
+  };
 };
 
 let replacedItems = (animation: animation): int =>
@@ -256,7 +264,9 @@ let elems =
     let normalItems =
       config.itemsWindow
       |> RangeOfInt.drop(replacedItems(animation))
-      |> RangeOfInt.dropRight(max(0, config.maxJump - replacedItems(animation)))
+      |> RangeOfInt.dropRight(
+           max(0, config.maxJump - replacedItems(animation)),
+         )
       |> RangeOfInt.map(i =>
            config.componentFactory(
              index(i),
@@ -269,59 +279,69 @@ let elems =
   };
 };
 
-let switchedAnimationState = (
-  config: config, 
-  state: state,
-  prevPaddingAnimationState: InfiniteSliderPadding.animationState,
-  prevAnimation: animation,
-  queuedAnimationToIndex: int): state => {
-    let (tSwitched, switchedAnimation, queuedStill) =
-      switchAnimation(
-        config,
-        prevPaddingAnimationState,
-        prevAnimation,
-        queuedAnimationToIndex,
-      );
+let switchedAnimationState =
+    (
+      config: config,
+      state: state,
+      prevPaddingAnimationState: InfiniteSliderPadding.animationState,
+      prevAnimation: animation,
+      queuedAnimationToIndex: int,
+    )
+    : state => {
+  let (tSwitched, switchedAnimation, queuedStill) =
+    switchAnimation(
+      config,
+      prevPaddingAnimationState,
+      prevAnimation,
+      queuedAnimationToIndex,
+    );
 
-    let id0 = id(config, state.centered);
-    let id1 = id(config, state.centered + 1);
-    let doc = Webapi.Dom.document;
-    let leftOfElement = (id: string): option(float) => {
-      let e = Webapi.Dom.Document.getElementById(id, doc) |> Option.flatMap(_, Webapi.Dom.Element.asHtmlElement);
-      // https://www.w3schools.com/jsref/prop_element_offsetleft.asp
-      Option.map(e, Webapi.Dom.HtmlElement.offsetLeft) |> Option.map(_, float_of_int);
-    };
+  let id0 = id(config, state.centered);
+  let id1 = id(config, state.centered + 1);
+  let doc = Webapi.Dom.document;
+  let leftOfElement = (id: string): option(float) => {
+    let e =
+      Webapi.Dom.Document.getElementById(id, doc)
+      |> Option.flatMap(_, Webapi.Dom.Element.asHtmlElement);
+    // https://www.w3schools.com/jsref/prop_element_offsetleft.asp
+    Option.map(e, Webapi.Dom.HtmlElement.offsetLeft)
+    |> Option.map(_, float_of_int);
+  };
 
-    let itemPitchX = Option.flatMap(leftOfElement(id0), left0 =>
+  let itemPitchX =
+    Option.flatMap(leftOfElement(id0), left0 =>
       Option.map(leftOfElement(id1), left1 => left1 -. left0)
-    ) |> Option.mapWithDefault(_, 20.0, x => x);
+    )
+    |> Option.mapWithDefault(_, 20.0, x => x);
 
-    let paddingState = animationPaddingState(
-              prevPaddingAnimationState,
-              itemPitchX,
-              switchedAnimation,
-            );  
-    {
-      ...state,
-      queuedAnimation: queuedStill,
-      centered: switchedAnimation.fromIndex,
-      animationState: Animating(switchedAnimation),
-      paddingCommand:
-        Start({
-          ...
-          paddingState,
-          tInitial: tSwitched,
-          t: tSwitched,
-        }),
-    };
-}  
+  let paddingState =
+    animationPaddingState(
+      prevPaddingAnimationState,
+      itemPitchX,
+      switchedAnimation,
+    );
+  {
+    ...state,
+    queuedAnimation: queuedStill,
+    centered: switchedAnimation.fromIndex,
+    animationState: Animating(switchedAnimation),
+    paddingCommand:
+      Start({...paddingState, tInitial: tSwitched, t: tSwitched}),
+  };
+};
 
 let stateMachine = (config: config, state: state, action: event): state => {
   switch (action, state.animationState) {
   | (AnimationComplete(prevPaddingAnimationState), Animating(prevAnimation)) =>
     switch (state.queuedAnimation) {
     | Some(queuedAnimationToIndex) =>
-      switchedAnimationState(config, state, prevPaddingAnimationState, prevAnimation, queuedAnimationToIndex)
+      switchedAnimationState(
+        config,
+        state,
+        prevPaddingAnimationState,
+        prevAnimation,
+        queuedAnimationToIndex,
+      )
     | _ => {
         ...state,
         centered: prevAnimation.toIndex,
@@ -330,8 +350,17 @@ let stateMachine = (config: config, state: state, action: event): state => {
         animationState: Idle,
       }
     }
-  | (ChangeSelected(newSelected), Idle) =>
-    {...switchedAnimationState(config, state, InfiniteSliderPadding.completedDummyState, {fromIndex: state.centered, toIndex: state.centered}, newSelected), selected: newSelected}
+  | (ChangeSelected(newSelected), Idle) => {
+      ...
+        switchedAnimationState(
+          config,
+          state,
+          InfiniteSliderPadding.completedDummyState,
+          {fromIndex: state.centered, toIndex: state.centered},
+          newSelected,
+        ),
+      selected: newSelected,
+    }
   | (ChangeSelected(newSelected), Animating(_)) =>
     let queuedAnimationToIndex = Some(newSelected);
     {
@@ -371,13 +400,18 @@ let logTransition = (config: config, (state: state, dispatch: event => unit)) =>
 };
 
 [@react.component]
-let make = (~config: config, ~selected: int, ~className: string, ~style: ReactDOMRe.Style.t = ReactUtil.emptyStyle) => {
+let make =
+    (
+      ~config: config,
+      ~selected: int,
+      ~className: string,
+      ~style: ReactDOMRe.Style.t=ReactUtil.emptyStyle,
+    ) => {
   let rowClassName = config.styleBaseName ++ "Row";
 
   let (state, dispatch) =
     React.useReducer(stateMachine(config), initialState);
-    // logTransition(config, React.useReducer(stateMachine(config), initialState));
-    
+  // logTransition(config, React.useReducer(stateMachine(config), initialState));
 
   React.useEffect2(
     () => {
@@ -394,9 +428,7 @@ let make = (~config: config, ~selected: int, ~className: string, ~style: ReactDO
       dispatch(AnimationComplete(paddingAnimationState))
     );
 
-  <div
-    style
-    className>
+  <div style className>
     <div className=rowClassName> {asReact(e)} </div>
   </div>;
 };
