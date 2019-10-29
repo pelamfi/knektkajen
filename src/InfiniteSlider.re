@@ -278,13 +278,14 @@ let elems =
   };
 };
 
+// https://www.w3schools.com/jsref/prop_element_offsetleft.asp
 let offsetLeftOfElement = (id: string): option(float) => {
-  open Webapi.Dom;
-  let e =
+  Webapi.Dom.(
     Document.getElementById(id, document)
-    |> Option.flatMap(_, Element.asHtmlElement);
-  // https://www.w3schools.com/jsref/prop_element_offsetleft.asp
-  Option.map(e, HtmlElement.offsetLeft) |> Option.map(_, float_of_int);
+    |> Option.flatMap(_, Element.asHtmlElement)
+    |> Option.map(_, HtmlElement.offsetLeft)
+    |> Option.map(_, float_of_int)
+  );
 };
 
 let switchedAnimationState =
